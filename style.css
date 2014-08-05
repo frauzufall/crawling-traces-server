@@ -1,0 +1,89 @@
+button, .button {
+	width:70px;
+	height:70px;
+	padding: 0;
+	border: 0;
+}
+
+body {
+    overflow: hidden;
+    cursor: default;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	background: black;
+	margin:0;
+	padding:0;
+}
+
+#newcolor {
+	border-right:10px solid black;
+	width:80px;
+	float: left;
+	background-color: black;
+}
+
+#locate {
+	background: url(img/locate.png) no-repeat center center;
+}
+
+#locate:hover, #locate:active {
+	background-color: #c1c1c2;
+}
+
+#header {
+	text-align:right;
+	margin:10px;
+}
+
+#title {
+	float: left;
+	text-align:left;
+	font-family:Verdana;
+	font-size:50px;
+	color: black;
+	font-weight: bold;
+	height: 50px;
+    line-height: 50px;
+    margin-left:20px;
+    margin-top:10px
+}
+
+#main {
+	background: url(img/gesture.png) no-repeat center center;
+	position:absolute;
+	height:100%;
+	width:100%;
+	padding: 0;
+	margin:0;
+	overflow: hidden;
+    cursor: default;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	z-index:-10;
+}
+
+#help {
+	padding-top: 90px;
+}
+
+#help td {
+	color: white;
+	font-family: Verdana;
+	padding-left:10px;
+	vertical-align:top;
+}
+
+#line {
+	position:absolute;
+	padding:0px; 
+	margin:0px; 
+	line-height:1px;
+}
