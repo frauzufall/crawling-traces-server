@@ -18,7 +18,7 @@ var http_clients_present = Array();
 function handler (request, response) {
      
     var filePath = '.' + request.url;
-    if (filePath == './')
+    if (filePath == './draw')
         filePath = './index.html';
 
     if (filePath == './control')
@@ -63,9 +63,16 @@ var path = require('path');
 
 var io = require('socket.io')(httpServer);
 
-io.on('connection', function (socket) {
+var io_control = io.of('/control');
+io_control.on('connection', function (socket) {
+	log('someone connected to control');
+	updateClientList();
+});
 
-	clearClientLists();
+var io_base = io.of('/draw');
+io_base.on('connection', function (socket) {
+
+	log("connect");
 
 	var knownclient = null;
 	var id = getId(socket);
@@ -145,6 +152,8 @@ io.on('connection', function (socket) {
 
   	socket.on('disconnect', function () {
 
+  		log("disconnect");
+
   		//check wether there is another tab open
 	    var socketactive = false;
 	    for(var i = 0; i < http_clients.length; i++) {
@@ -189,33 +198,6 @@ io.on('connection', function (socket) {
   	updateClientList();
 
 });
-
-function clearClientLists() {
-	var clear = false;
-	var i = 0;
-	while(!clear) {
-		for(i = 0; i < http_clients.length; i++) {
-			if(typeof getId(http_clients[i]) === 'undefined') {
-				http_clients.remove(i);
-				break;
-			}
-		}
-		if(i >= http_clients.length)
-			clear = true;
-	}
-	clear = false;
-	while(!clear) {
-		for(i = 0; i < http_clients_inactive.length; i++) {
-			if(typeof getId(http_clients_inactive[i]) === 'undefined') {
-				http_clients_inactive.remove(i);
-				break;
-			}
-		}
-		if(i >= http_clients_inactive.length)
-			clear = true;
-	}
-	
-}
 
 function getId(socket) {
 	return socket.request.connection.remoteAddress;
@@ -282,6 +264,21 @@ function asColor(hue) {
 function log(text) {
 	var n = (new Date()).toGMTString();
 	console.log(n + ": " + text);
+}
+
+function updateClientList() {
+	log("web: " + http_clients.length + " old web: " + http_clients_inactive.length + " tcp: " + tcp_clients.length);
+	tcp_clients_min = new Array();
+	for(var i = 0; i < tcp_clients.length; i++) {
+		tcp_clients_min.push(tcp_clients[i].id);
+	}
+	web_clients_min = new Array();
+	for(var i = 0; i < http_clients.length; i++) {
+		web_clients_min.push(http_clients[i].id);
+	}
+	for(var i = 0; i < http_clients.length; i++) {
+    	io_control.emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
+    }
 }
 
 //************************ communication from webclients and arduino to openframeworks ************************//
@@ -435,22 +432,6 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 	}
 
 }
-
-function updateClientList() {
-	//log("web: " + http_clients.length + " old web: " + http_clients_inactive.length + " tcp: " + tcp_clients.length);
-	tcp_clients_min = new Array();
-	for(var i = 0; i < tcp_clients.length; i++) {
-		tcp_clients_min.push(tcp_clients[i].id);
-	}
-	web_clients_min = new Array();
-	for(var i = 0; i < http_clients.length; i++) {
-		web_clients_min.push(http_clients[i].id);
-	}
-	for(var i = 0; i < http_clients.length; i++) {
-    	http_clients[i].emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
-    }
-}
-
 
 function getRandomColor() {
 	/*

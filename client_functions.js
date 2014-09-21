@@ -1,4 +1,4 @@
-var socket = io();
+var socket = io('/draw');
 
 socket.on('setColor', function(data) {
     color1 = data["hex1"];
@@ -44,7 +44,6 @@ socket.on('ready', function (data) {
 
     socket.emit("logStuff", {type: type, setcolor: data.setcolor});
 
-    //socket.emit('my other event', { my: 'data' });
 });
 
 var speed = 10;

@@ -1,13 +1,12 @@
-var socket = io();
+var socket = io('/control');
 
-socket.on("update-clients", function(data){
-    console.log("update-clients");
+socket.on("update-clients", function (data) {
     $("#tcp-clients").empty();
     $.each(data.tcpclients, function(a, obj) {
-        $('#tcp-clients').append("<li><span>" + obj + "</span><a href=\"#\">control</a></li>");
+        $('#tcp-clients').append("<li><span>" + obj + "</span></li>");
     });
     $("#web-clients").empty();
-    $.each(data.webclients, function(a, obj) {
+    $.each(data.httpclients, function(a, obj) {
         $('#web-clients').append("<li><span>" + obj + "</span></li>");
     });
 });
