@@ -39,12 +39,15 @@ body {
 	margin:10px;
 }
 
+#header.control {
+	color: white;
+}
+
 #title {
 	float: left;
 	text-align:left;
 	font-family:Verdana;
 	font-size:50px;
-	color: black;
 	font-weight: bold;
 	height: 50px;
     line-height: 50px;
@@ -52,7 +55,7 @@ body {
     margin-top:10px
 }
 
-#main {
+#main.action {
 	background: url(img/gesture.png) no-repeat center center;
 	position:absolute;
 	height:100%;
@@ -68,6 +71,11 @@ body {
 	-ms-user-select: none;
 	user-select: none;
 	z-index:-10;
+}
+
+#main.control {
+	color: white;
+	clear: both;
 }
 
 #help {

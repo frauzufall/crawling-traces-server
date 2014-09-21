@@ -8,14 +8,21 @@ log("--------------------- new session -----------------------");
 var httpServer = require('http').createServer(handler);
 httpServer.listen(httpPort);
 
+var http_clients = Array();
+var http_clients_inactive = Array();
 var http_clients_col1 = Array();
 var http_clients_col2 = Array();
+var http_clients_new = Array();
+var http_clients_present = Array();
 
 function handler (request, response) {
      
     var filePath = '.' + request.url;
     if (filePath == './')
         filePath = './index.html';
+
+    if (filePath == './control')
+        filePath = './control.html';
          
     var extname = path.extname(filePath);
     var contentType = 'text/html';
@@ -58,68 +65,217 @@ var io = require('socket.io')(httpServer);
 
 io.on('connection', function (socket) {
 
-	var id = socket.id;
-    var msg = id + ':new:web';
-    http_clients_col1[id] = null;
-    http_clients_col2[id] = null;
-    sendToAllOfs(msg);
-    log("new web client : " + id);
+	clearClientLists();
 
-  	socket.emit('ready');
+	var knownclient = null;
+	var id = getId(socket);
+
+	//check wether id was already there and left
+	for(var i = 0; i < http_clients_inactive.length; i++) {
+		if(getId(http_clients_inactive[i]) == id) {
+			knownclient = http_clients_inactive[i];
+			break;
+		}
+	}
+	//check wether id is already there e.g. in another tab
+	for(var i = 0; i < http_clients.length; i++) {
+		if(getId(http_clients[i]) == id) {
+			knownclient = http_clients[i];
+			break;
+		}
+	}
+
+	http_clients_new[id] = (knownclient == null);
+
+	//save socket instance to active client list
+	http_clients.push(socket);
+
+	if(!knownclient) {
+		//id is new
+		
+    	http_clients_col1[id] = null;
+    	http_clients_col2[id] = null;
+    	
+    	//tell projections about new client
+    	var msg = id + ':new:web';
+    	sendToAllOfs(msg);
+
+    	//tell socket to initialize and to ask for a new color
+    	socket.emit('ready', {setcolor: true});
+    	
+    	log("new web client: " + id);
+	}
+	else {
+		
+		//tell socket to initialize and not ask for a color, previous color should be used
+		socket.emit('ready', {setcolor: false});
+    	
+    	//create new random color
+    	var cols = newColor();
+    	//check wether there is a saved color pack from previous session of the id
+    	if(http_clients_col1[id] && http_clients_col2[id]) {
+			cols[0] = http_clients_col1[id];
+	    	cols[1] = http_clients_col2[id];
+    	}
+    	//send this color pack to projections and to socket
+    	newColor(id,cols);
+    
+    	//tell projections that client reappeared (can be used to change id)
+    	var msg = id + ':id:' + id;
+    	sendToAllOfs(msg);
+
+    	log("web client logged in again: " + id);
+
+    	//remove saved socket instance from inactive list
+		http_clients_inactive.splice(http_clients_inactive.indexOf(knownclient), 1);
+	}
 
   	socket.on('logStuff', function (data) {
-    	if(http_clients_col1[socket.id] == null) {
-			var cols = newColor(socket.id);
-			var hex1 = rgbToHex(cols[0].r,cols[0].g,cols[0].b);
-			var hex2 = rgbToHex(cols[1].r,cols[1].g,cols[1].b);
-			//log("hex: " + hex1);
-			socket.emit('setColor', {"hex1":hex1, "hex2":hex2});
+    	if(http_clients_col1[id] == null && data.setcolor) {
+			newColor(id);
 		}
-	    sendToAllOfs(socket.id + ":" + data.msg);
+	    sendToAllOfs(id + ":" + data.msg);
   	});
 
   	socket.on('initNewColor', function (data) {
-    	//console.log(msg);
-		var cols = newColor(socket.id);
-		var hex1 = rgbToHex(cols[0].r,cols[0].g,cols[0].b);
-		var hex2 = rgbToHex(cols[1].r,cols[1].g,cols[1].b);
-		//log("hex: " + hex1);
-		socket.emit('setColor', {"hex1":hex1, "hex2":hex2});
+  		if(http_clients_new[id] || !data.pageload) {
+			newColor(id);
+  		}
   	});
 
+  	socket.on('disconnect', function () {
+
+  		//check wether there is another tab open
+	    var socketactive = false;
+	    for(var i = 0; i < http_clients.length; i++) {
+	    	var socketid = getId(http_clients[i]);
+	    	if(socketid == id && http_clients[i] !== socket) {
+	    		socketactive = true;
+	    		break;
+	    	}
+	    }
+
+	    if(!socketactive) {
+	    	//no other tab is open
+			
+			//save gone socket locally
+			var saved_as_inactive = false;
+			for(var i = 0; i < http_clients_inactive.length; i++) {
+		    	var socketid = getId(http_clients_inactive[i]);
+		    	if(socketid == id) {
+		    		saved_as_inactive = true;
+		    		break;
+		    	}
+		    }
+		    if(!saved_as_inactive)
+				http_clients_inactive.push(socket);
+
+			//tell projections that socket is gone
+			var msg = id + ':gone:web';
+			sendToAllOfs(msg);
+			log("gone web client: " + id);
+
+	    }
+
+	    //remove the socket from local storage
+		http_clients.splice(http_clients.indexOf(socket), 1);
+
+		//update list of sockets on control page
+	    updateClientList();
+		
+	});
+
+	//update list of sockets on control page
+  	updateClientList();
+
 });
 
-io.on('disconnection', function (socket) {
-
-	var msg = socket.id + ':gone:web';
-    sendToAllOfs(msg);
-    http_clients_col1[socket.id] = null;
-    http_clients_col2[socket.id] = null;
-    log("gone web client: " + socket.id);
+function clearClientLists() {
+	var clear = false;
+	var i = 0;
+	while(!clear) {
+		for(i = 0; i < http_clients.length; i++) {
+			if(typeof getId(http_clients[i]) === 'undefined') {
+				http_clients.remove(i);
+				break;
+			}
+		}
+		if(i >= http_clients.length)
+			clear = true;
+	}
+	clear = false;
+	while(!clear) {
+		for(i = 0; i < http_clients_inactive.length; i++) {
+			if(typeof getId(http_clients_inactive[i]) === 'undefined') {
+				http_clients_inactive.remove(i);
+				break;
+			}
+		}
+		if(i >= http_clients_inactive.length)
+			clear = true;
+	}
 	
-});
+}
 
-function newColor(id) {
+function getId(socket) {
+	return socket.request.connection.remoteAddress;
+}
+
+function newColor(id, color) {
+
 	//res[0] .. new color
 	//res[1] .. next random color
 	var res = Array();
-	res[1] = getRandomColor();
-	if(http_clients_col2[id] == null) {
-		res[0] = getRandomColor();
+	var idset = typeof id !== 'undefined';
+	var colorset = typeof color !== 'undefined';
+
+	//set color
+	if(colorset) {
+		res = color;
 	}
 	else {
-		res[0] = http_clients_col2[id];
+		res[1] = getRandomColor();
+		if(idset) {
+			if(http_clients_col2[id] == null) {
+				res[0] = getRandomColor();
+			}
+			else {
+				res[0] = http_clients_col2[id];
+			}
+		}
+		else {
+			res[0] = getRandomColor();
+		}
 	}
-    var msg = id + ":color:" + res[0].r + "|" + res[0].g + "|" + res[0].b;
-    sendToAllOfs(msg);
-    http_clients_col1[id] = res[0];
-    http_clients_col2[id] = res[1];
+
+	//send color
+	if(idset) {
+
+		//save colors locally
+	    http_clients_col1[id] = res[0];
+	    http_clients_col2[id] = res[1];
+		
+		//update client color within all projections
+		var msg = id + ":color:" + res[0].r + "|" + res[0].g + "|" + res[0].b;
+	    sendToAllOfs(msg);
+
+		//send to all webclients with the same id
+		var hex1 = rgbToHex(res[0].r,res[0].g,res[0].b);
+		var hex2 = rgbToHex(res[1].r,res[1].g,res[1].b);
+		for(var i = 0; i < http_clients.length; i++) {
+			var socketid = getId(http_clients[i]);
+			if(socketid == id) {
+				http_clients[i].emit('setColor', {"hex1":hex1, "hex2":hex2});
+			}
+		}
+
+	}
+	
     return res;
 }
 
 function asColor(hue) {
-	var color = "hsl(" + hue + ", 60%, 70%)";    
-	log(color);
+	var color = "hsl(" + hue + ", 60%, 70%)";
     return color;
 }
 
@@ -182,6 +338,7 @@ net.createServer(function(socket) {
 			if(tcp_clients[i].address == remoteAddress && tcp_clients[i].port == remotePort) {
 				tcp_clients.remove(i);
 				tcp_clients_num--;
+				updateClientList();
 				break;
 			}
 		}
@@ -193,14 +350,12 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 	
 	if(action =="color") {
 		//log("server got: " + orig_msg + " from " + socket.remoteAddress + ":" + socket.remotePort);
-		nowjs.getClient(client_id, function() {
-			if(this != null) {
-				//console.log("found client, trying to send color");
-				this.now.setColor(value);
+		for(var i = 0; i < http_clients.length; i++) {
+			if(client_id == getId(http_clients[i])) {
+				//TODO not implemented yet why do i need this?
+				//http_clients[i].emit('setColor', {"hex1":value});
 			}
-			else
-				log("not able to set color of client " + client_id + ": client not found.");
-		});
+		}
 	}
 	else {
 		var i,c;
@@ -232,12 +387,14 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 				var message = new Buffer("Welcome new tcp " + c.type + " client: " + c.id);
 				socket.write(message + "\n");
 				if(!c.cleared) {
-					log("clearing");
+					log("clearing projections");
 					message = new Buffer("all:clear:xxx");
 					socket.write(message + "\n");
 					c.cleared = true;
 				}
 			}
+
+			updateClientList();
 
 		}
 		else if (i < tcp_clients_num) {
@@ -277,6 +434,21 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 		c.socket = socket;
 	}
 
+}
+
+function updateClientList() {
+	//log("web: " + http_clients.length + " old web: " + http_clients_inactive.length + " tcp: " + tcp_clients.length);
+	tcp_clients_min = new Array();
+	for(var i = 0; i < tcp_clients.length; i++) {
+		tcp_clients_min.push(tcp_clients[i].id);
+	}
+	web_clients_min = new Array();
+	for(var i = 0; i < http_clients.length; i++) {
+		web_clients_min.push(http_clients[i].id);
+	}
+	for(var i = 0; i < http_clients.length; i++) {
+    	http_clients[i].emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
+    }
 }
 
 

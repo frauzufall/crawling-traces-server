@@ -39,8 +39,10 @@ socket.on('ready', function (data) {
         */
         steps = steps_mobile;
         speed = speed_mobile;
-        socket.emit("logStuff", 'type:' + type);
+        
     }
+
+    socket.emit("logStuff", {type: type, setcolor: data.setcolor});
 
     //socket.emit('my other event', { my: 'data' });
 });
@@ -71,7 +73,11 @@ function sendPulse() {
 }
 
 function sendNewColor() {
-    socket.emit("initNewColor");
+    socket.emit("initNewColor", {pageload: false});
+}
+
+function sendNewColorAfterPageLoad() {
+    socket.emit("initNewColor", {pageload: true});
 }
 
 var line;
@@ -99,7 +105,7 @@ window.onload = function() {
     
     line = document.getElementById("line");
     
-    sendNewColor();    
+    sendNewColorAfterPageLoad();
 }
 
 
