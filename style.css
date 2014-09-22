@@ -39,22 +39,6 @@ body {
 	margin:10px;
 }
 
-#header.control {
-	color: white;
-}
-
-#title {
-	float: left;
-	text-align:left;
-	font-family:Verdana;
-	font-size:50px;
-	font-weight: bold;
-	height: 50px;
-    line-height: 50px;
-    margin-left:20px;
-    margin-top:10px
-}
-
 #main.action {
 	background: url(img/gesture.png) no-repeat center center;
 	position:absolute;
@@ -103,6 +87,7 @@ body {
 .control h1 {
 	border-bottom: 1px solid white;
 	display: block;
+	margin-left: 13px;
 }
 
 .control h2 {

@@ -6,6 +6,7 @@ socket.on("update-clients", function (data) {
     $.each(data.tcpclients, function(a, obj) {
         $('#tcp-clients').append("<li><span>" + obj.id + "</span></li>");
     });
+    $(".projections-num").html("("+data.tcpclients.length+")");
     
     $("#web-clients").empty();
     $.each(data.httpclients, function(a, obj) {
@@ -13,6 +14,7 @@ socket.on("update-clients", function (data) {
         var client = $(".webclient-"+identify(obj.id));
         client.css({color: obj.color});
     });
+    $(".participants-num").html("("+data.httpclients.length+")");
 
 });
 
@@ -25,14 +27,11 @@ socket.on("colorChanged", function (data) {
 socket.on("client-active", function (data) {
 
     var client = $(".webclient-"+identify(data.id));
-    var color = client.css("color");
-    client.animate({
-        "background-color": color,
-        }, 5000, function() {
-        client.animate({
-            "background-color": "none",
-        }, 5000, function() {});
+
+    client.fadeOut(300, function() {
+        $(this).fadeIn(300);
     });
+    
 });
 
 socket.on('ready', function (data) {

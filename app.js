@@ -64,7 +64,6 @@ var io = require('socket.io')(httpServer);
 
 var io_control = io.of('/control');
 io_control.on('connection', function (socket) {
-	log('someone connected to control');
 	updateClientList();
 });
 
