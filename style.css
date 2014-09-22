@@ -95,3 +95,18 @@ body {
 	margin:0px; 
 	line-height:1px;
 }
+
+.control {
+	font-family: Verdana;
+}
+
+.control h1 {
+	border-bottom: 1px solid white;
+	display: block;
+}
+
+.control h2 {
+	margin-left: 13px;
+	margin-top:20px;
+	margin-bottom: 5px;
+}

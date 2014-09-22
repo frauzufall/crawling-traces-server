@@ -1,13 +1,37 @@
 var socket = io('/control');
 
 socket.on("update-clients", function (data) {
+    
     $("#tcp-clients").empty();
     $.each(data.tcpclients, function(a, obj) {
-        $('#tcp-clients').append("<li><span>" + obj + "</span></li>");
+        $('#tcp-clients').append("<li><span>" + obj.id + "</span></li>");
     });
+    
     $("#web-clients").empty();
     $.each(data.httpclients, function(a, obj) {
-        $('#web-clients').append("<li><span>" + obj + "</span></li>");
+        $('#web-clients').append("<li class='webclient-"+identify(obj.id)+"'><span>" + obj.id + "</span></li>");
+        var client = $(".webclient-"+identify(obj.id));
+        client.css({color: obj.color});
+    });
+
+});
+
+socket.on("colorChanged", function (data) {
+
+    $(".webclient-"+identify(data.id)).css({color: data.color});
+
+});
+
+socket.on("client-active", function (data) {
+
+    var client = $(".webclient-"+identify(data.id));
+    var color = client.css("color");
+    client.animate({
+        "background-color": color,
+        }, 5000, function() {
+        client.animate({
+            "background-color": "none",
+        }, 5000, function() {});
     });
 });
 
@@ -58,4 +82,11 @@ function _addEventListener(element, eventName, handler, captureEvents){
         else {
             element['on' + eventName] = handler;
         }
+}
+
+function identify(ugly) {
+    if(ugly) {
+        ugly = ugly.split(".").join("")
+        return ugly;
+    }
 }

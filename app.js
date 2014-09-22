@@ -8,12 +8,11 @@ log("--------------------- new session -----------------------");
 var httpServer = require('http').createServer(handler);
 httpServer.listen(httpPort);
 
+// has the following structure: {"192.168.178.1": {"sslkwerh12", "asdflaij213", ..}}
 var http_clients = Array();
-var http_clients_inactive = Array();
 var http_clients_col1 = Array();
 var http_clients_col2 = Array();
 var http_clients_new = Array();
-var http_clients_present = Array();
 
 function handler (request, response) {
      
@@ -72,45 +71,39 @@ io_control.on('connection', function (socket) {
 var io_base = io.of('/draw');
 io_base.on('connection', function (socket) {
 
-	log("connect");
+	var knownclient = false;
+	var ip = getId(socket);
+	var unique_id = socket.id;
 
-	var knownclient = null;
-	var id = getId(socket);
+	socket.join(ip);
 
-	//check wether id was already there and left
-	for(var i = 0; i < http_clients_inactive.length; i++) {
-		if(getId(http_clients_inactive[i]) == id) {
-			knownclient = http_clients_inactive[i];
-			break;
-		}
+	//check wether ip is or has been already there
+	if(http_clients[ip]) {
+		knownclient = true;
 	}
-	//check wether id is already there e.g. in another tab
-	for(var i = 0; i < http_clients.length; i++) {
-		if(getId(http_clients[i]) == id) {
-			knownclient = http_clients[i];
-			break;
-		}
+	else {
+		http_clients[ip] = new Array();
 	}
 
-	http_clients_new[id] = (knownclient == null);
+	http_clients_new[ip] = !knownclient;
 
-	//save socket instance to active client list
-	http_clients.push(socket);
+	//save socket id to active client list
+	http_clients[ip].push(unique_id);
 
 	if(!knownclient) {
-		//id is new
+		//ip is new
 		
-    	http_clients_col1[id] = null;
-    	http_clients_col2[id] = null;
+    	http_clients_col1[ip] = null;
+    	http_clients_col2[ip] = null;
     	
     	//tell projections about new client
-    	var msg = id + ':new:web';
+    	var msg = ip + ':new:web';
     	sendToAllOfs(msg);
 
     	//tell socket to initialize and to ask for a new color
     	socket.emit('ready', {setcolor: true});
     	
-    	log("new web client: " + id);
+    	log("new web client: " + ip);
 	}
 	else {
 		
@@ -119,75 +112,56 @@ io_base.on('connection', function (socket) {
     	
     	//create new random color
     	var cols = newColor();
-    	//check wether there is a saved color pack from previous session of the id
-    	if(http_clients_col1[id] && http_clients_col2[id]) {
-			cols[0] = http_clients_col1[id];
-	    	cols[1] = http_clients_col2[id];
+    	//check wether there is a saved color pack from previous session of the ip
+    	if(http_clients_col1[ip] && http_clients_col2[ip]) {
+			cols[0] = http_clients_col1[ip];
+	    	cols[1] = http_clients_col2[ip];
     	}
     	//send this color pack to projections and to socket
-    	newColor(id,cols);
+    	newColor(ip,cols);
     
-    	//tell projections that client reappeared (can be used to change id)
-    	var msg = id + ':id:' + id;
+    	//tell projections that client reappeared (can be used to change ip)
+    	var msg = ip + ':id:' + ip;
     	sendToAllOfs(msg);
 
-    	log("web client logged in again: " + id);
+    	log("web client logged in again: " + ip);
 
-    	//remove saved socket instance from inactive list
-		http_clients_inactive.splice(http_clients_inactive.indexOf(knownclient), 1);
 	}
 
   	socket.on('logStuff', function (data) {
-    	if(http_clients_col1[id] == null && data.setcolor) {
-			newColor(id);
+    	if(http_clients_col1[ip] == null && data.setcolor) {
+			newColor(ip);
 		}
-	    sendToAllOfs(id + ":" + data.msg);
+	    sendToAllOfs(ip + ":" + data.msg);
+	    io_control.emit('client-active', {"id":ip});
   	});
 
   	socket.on('initNewColor', function (data) {
-  		if(http_clients_new[id] || !data.pageload) {
-			newColor(id);
+  		if(http_clients_new[ip] || !data.pageload) {
+			newColor(ip);
   		}
   	});
 
   	socket.on('disconnect', function () {
 
-  		log("disconnect");
+  		//remove the socket from local storage
+  		http_clients[ip].splice(http_clients[ip].indexOf(unique_id), 1);
 
   		//check wether there is another tab open
 	    var socketactive = false;
-	    for(var i = 0; i < http_clients.length; i++) {
-	    	var socketid = getId(http_clients[i]);
-	    	if(socketid == id && http_clients[i] !== socket) {
-	    		socketactive = true;
-	    		break;
-	    	}
+	    if(http_clients[ip].length > 0) {
+	    	socketactive = true;
 	    }
 
 	    if(!socketactive) {
 	    	//no other tab is open
-			
-			//save gone socket locally
-			var saved_as_inactive = false;
-			for(var i = 0; i < http_clients_inactive.length; i++) {
-		    	var socketid = getId(http_clients_inactive[i]);
-		    	if(socketid == id) {
-		    		saved_as_inactive = true;
-		    		break;
-		    	}
-		    }
-		    if(!saved_as_inactive)
-				http_clients_inactive.push(socket);
 
 			//tell projections that socket is gone
-			var msg = id + ':gone:web';
+			var msg = ip + ':gone:web';
 			sendToAllOfs(msg);
-			log("gone web client: " + id);
+			log("gone web client: " + ip);
 
 	    }
-
-	    //remove the socket from local storage
-		http_clients.splice(http_clients.indexOf(socket), 1);
 
 		//update list of sockets on control page
 	    updateClientList();
@@ -203,12 +177,12 @@ function getId(socket) {
 	return socket.request.connection.remoteAddress;
 }
 
-function newColor(id, color) {
+function newColor(ip, color) {
 
 	//res[0] .. new color
 	//res[1] .. next random color
 	var res = Array();
-	var idset = typeof id !== 'undefined';
+	var idset = typeof ip !== 'undefined';
 	var colorset = typeof color !== 'undefined';
 
 	//set color
@@ -218,11 +192,11 @@ function newColor(id, color) {
 	else {
 		res[1] = getRandomColor();
 		if(idset) {
-			if(http_clients_col2[id] == null) {
+			if(http_clients_col2[ip] == null) {
 				res[0] = getRandomColor();
 			}
 			else {
-				res[0] = http_clients_col2[id];
+				res[0] = http_clients_col2[ip];
 			}
 		}
 		else {
@@ -234,22 +208,20 @@ function newColor(id, color) {
 	if(idset) {
 
 		//save colors locally
-	    http_clients_col1[id] = res[0];
-	    http_clients_col2[id] = res[1];
+	    http_clients_col1[ip] = res[0];
+	    http_clients_col2[ip] = res[1];
 		
 		//update client color within all projections
-		var msg = id + ":color:" + res[0].r + "|" + res[0].g + "|" + res[0].b;
+		var msg = ip + ":color:" + res[0].r + "|" + res[0].g + "|" + res[0].b;
 	    sendToAllOfs(msg);
 
-		//send to all webclients with the same id
+		//send to all webclients with the same ip
 		var hex1 = rgbToHex(res[0].r,res[0].g,res[0].b);
 		var hex2 = rgbToHex(res[1].r,res[1].g,res[1].b);
-		for(var i = 0; i < http_clients.length; i++) {
-			var socketid = getId(http_clients[i]);
-			if(socketid == id) {
-				http_clients[i].emit('setColor', {"hex1":hex1, "hex2":hex2});
-			}
+		for(var i = 0; i < http_clients[ip].length; i++) {
+			io_base.to(ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
 		}
+		io_control.emit('colorChanged', {id: ip, color: hex1});
 
 	}
 	
@@ -266,19 +238,38 @@ function log(text) {
 	console.log(n + ": " + text);
 }
 
+//TODO FROM HERE
+
 function updateClientList() {
-	log("web: " + http_clients.length + " old web: " + http_clients_inactive.length + " tcp: " + tcp_clients.length);
-	tcp_clients_min = new Array();
+	//log("web: " + Object.keys(http_clients).length + " tcp: " + tcp_clients.length);
+
+	//store tcp ids in array
+	var tcp_clients_min = new Array();
 	for(var i = 0; i < tcp_clients.length; i++) {
-		tcp_clients_min.push(tcp_clients[i].id);
+		tcp_clients_min.push({ 
+			id: tcp_clients[i].id 
+		});
 	}
-	web_clients_min = new Array();
-	for(var i = 0; i < http_clients.length; i++) {
-		web_clients_min.push(http_clients[i].id);
+
+	//store http socket ips and the related color in array
+	var web_clients_min = new Array();
+	var http_ips = Object.keys(http_clients);
+	for(var i = 0; i < http_ips.length; i++) {
+		//log("webclient: "+http_ips[i] + " [" + http_clients[http_ips[i]].length + "]");
+		var col = http_clients_col1[http_ips[i]];
+		var hex_col = null;
+		if(col) {
+			hex_col = rgbToHex(col.r,col.g,col.b);
+		}
+		web_clients_min.push({ 
+			id : http_ips[i], 
+			color: hex_col
+		});
 	}
-	for(var i = 0; i < http_clients.length; i++) {
-    	io_control.emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
-    }
+	
+	//send tcp and http clients to control page sockets
+    io_control.emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
+    
 }
 
 //************************ communication from webclients and arduino to openframeworks ************************//
@@ -330,7 +321,6 @@ net.createServer(function(socket) {
 
    socket.on('close', function() {
       // Remove from array of clients
-      //clients.splice(clients.indexOf(remoteAddress + ':' + remotePort), 1);
 		for(var i = 0; i < tcp_clients_num; i++) {
 			if(tcp_clients[i].address == remoteAddress && tcp_clients[i].port == remotePort) {
 				tcp_clients.remove(i);
@@ -349,7 +339,7 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 		//log("server got: " + orig_msg + " from " + socket.remoteAddress + ":" + socket.remotePort);
 		for(var i = 0; i < http_clients.length; i++) {
 			if(client_id == getId(http_clients[i])) {
-				//TODO not implemented yet why do i need this?
+				//TODO not implemented yet | why do i need this?
 				//http_clients[i].emit('setColor', {"hex1":value});
 			}
 		}
@@ -524,3 +514,46 @@ Array.prototype.remove = function(from, to) {
   this.length = from < 0 ? this.length + from : from;
   return this.push.apply(this, rest);
 };
+
+
+// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
+if (!Object.keys) {
+  Object.keys = (function () {
+    'use strict';
+    var hasOwnProperty = Object.prototype.hasOwnProperty,
+        hasDontEnumBug = !({toString: null}).propertyIsEnumerable('toString'),
+        dontEnums = [
+          'toString',
+          'toLocaleString',
+          'valueOf',
+          'hasOwnProperty',
+          'isPrototypeOf',
+          'propertyIsEnumerable',
+          'constructor'
+        ],
+        dontEnumsLength = dontEnums.length;
+
+    return function (obj) {
+      if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
+        throw new TypeError('Object.keys called on non-object');
+      }
+
+      var result = [], prop, i;
+
+      for (prop in obj) {
+        if (hasOwnProperty.call(obj, prop)) {
+          result.push(prop);
+        }
+      }
+
+      if (hasDontEnumBug) {
+        for (i = 0; i < dontEnumsLength; i++) {
+          if (hasOwnProperty.call(obj, dontEnums[i])) {
+            result.push(dontEnums[i]);
+          }
+        }
+      }
+      return result;
+    };
+  }());
+}
