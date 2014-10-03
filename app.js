@@ -39,6 +39,7 @@ function handler (request, response) {
         if (exists) {
             fs.readFile(filePath, function(error, content) {
                 if (error) {
+                	log("500 error");
                     response.writeHead(500);
                     response.end();
                 }
@@ -64,7 +65,24 @@ var io = require('socket.io')(httpServer);
 
 var io_control = io.of('/control');
 io_control.on('connection', function (socket) {
+
+	var ip = getId(socket);
+
 	updateClientList();
+
+	socket.on('joinMapping', function (data) {
+  		socket.join("mapping-"+data.client);
+  		sendToOf(data.client, ip + ":getmapping:xxx");
+  	});
+
+  	socket.on('updateMappingForm', function (data) {
+    	sendToOf(data.client, ip + ":" + data.msg);
+  	});
+
+  	socket.on('newMappingForm', function (data) {
+    	sendToOf(data.client, ip + ":" + data.msg);
+  	});
+
 });
 
 var io_base = io.of('/draw');
@@ -281,6 +299,14 @@ function sendToAllOfs(msg) {
     }
 }
 
+function sendToOf(id, msg) {
+    for(var i = 0; i < tcp_clients_num; i++) {
+        if(tcp_clients[i].id == id) {
+            tcp_clients[i].socket.write(msg + "\n");
+		}
+    }
+}
+
 //************************ arduino, openframeworks **********************************************************//
 
 function Client (type) {
@@ -305,14 +331,18 @@ net.createServer(function(socket) {
 
    socket.on('data', function(data) {
 		//console.log("server got: " + data.toString() + " from " + remoteAddress + ":" + remotePort);
-		//var msg = "" + data.toString().replace(/(\n|\s|\r|\N)/g,"");
 		var parts = data.toString().split("\n");
 		//console.log(parts.length+" PART MSG, INCOMING");
         for (var i = 0; i <= parts.length -1; i++) {
+			
 			var msg = parts[i];
+			
+			//removes charcode 0 from beginning... this happens sometimes and drove me crazy. 
+			msg = msg.replace(/[\x00-\x1f]/, "");
+
 			var msg_parts =msg.split(":");
 			if(msg_parts.length == 3) {
-				//console.log("valid msg: " + msg);
+				//log("valid msg: " + msg);
 				processTcpMsg(msg_parts[0],msg_parts[1],msg_parts[2], socket, msg);
 			}	
         }
@@ -346,7 +376,7 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 	else {
 		var i,c;
 		for(i = 0; i < tcp_clients_num; i++) {
-			if(tcp_clients[i].id == client_id) {
+			if(tcp_clients[i].id === client_id) {
 				break;
 			}
 		}
@@ -414,12 +444,49 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 				}
 			}
 		}
+		else if(action == "mappingsize") {
+			var mappingsize = value.split("|");
+			if(mappingsize.length == 2) {
+				io_control.to("mapping-"+client_id).emit("mappingSize", {width: mappingsize[0], height: mappingsize[1]});
+			}
+		}
+		else if(action == "updatemappingform") {
+			io_control.to("mapping-"+client_id).emit('updateMappingForm', decodeMappingString(value));
+		}
+		else if(action == "newmappingform") {
+			var data = decodeMappingString(value);
+			io_control.to("mapping-"+client_id).emit('newMappingForm', data);
+		}
 		
 		c.port = socket.remotePort;
 		c.address = socket.remoteAddress;
 		c.socket = socket;
 	}
 
+}
+
+//input string: "1;window;714.667|548.148,992|601.482,924.444|737.778,682.667|702.222"
+//output array: {id: 1, type: "window", points: {{x: 714.667, y: 548.148}, {x: 992, y: 601.482}, ..} }
+function decodeMappingString(string) {
+	var form = {};
+	var split1 = string.split(";");
+	if(split1.length == 3) {
+		form.id = split1[0];
+		form.type = split1[1];
+		var split2 = split1[2].split(",");
+		form.points = {};
+		for (var i = 0; i < split2.length; i++) {
+			var split3 = split2[i].split("|");
+			form.points[i] = {x: split3[0], y: split3[1]};
+		}
+	}
+	else {
+		form = null;
+	}
+	if(form == null) {
+		log("Error while decoding mapping string '" + string + "'");
+	}
+	return form;
 }
 
 function getRandomColor() {

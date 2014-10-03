@@ -95,3 +95,7 @@ body {
 	margin-top:20px;
 	margin-bottom: 5px;
 }
+
+#canvas {
+	border: 1px solid white;
+}
