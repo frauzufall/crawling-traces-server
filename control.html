@@ -5,6 +5,7 @@
     <link type="text/css" href="style.css" rel="StyleSheet">
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="/lib/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="/lib/jsgl.min.js"></script>
     <script type="text/javascript" src="/control_functions.js"></script>
     </head>
     <body>
@@ -16,8 +17,21 @@
             <ul id="web-clients"></ul>
         </div>
         <div id="mapping">
-            <h1>Mapping</h1>
-            <canvas id="canvas" width="150" height="150"></canvas>
+
+            <object id="stream" width="480" height="302" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">
+              <param name="flashvars" value="cid=19121934&amp;autoplay=false&amp;locale=de_DE"/>
+              <param name="allowfullscreen" value="true"/>
+              <param name="allowscriptaccess" value="always"/>
+              <param name="src" value="http://www.ustream.tv/flash/viewer.swf"/>
+              <param name="wmode" value="transparent">
+              <embed id="stream_embed" flashvars="cid=19121934&amp;autoplay=false&amp;locale=de_DE" width="480" height="302" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash" wmode="transparent"></embed>
+            </object>
+
+            <!--<iframe id="stream" width="720" height="437" src="http://www.ustream.tv/embed/19121934?v=3&amp;wmode=direct" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>-->
+            <div id="digitalstream">
+                <div id="panel_mapping"></div>
+                <div id="panel_drawing"></div>
+            </div>
         </div>
     </body>
 </html>

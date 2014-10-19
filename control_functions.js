@@ -2,6 +2,10 @@ var socket = io('/control');
 
 var canvassize = {x: 0, y: 0};
 
+var drawings = Array();
+
+var panel_mapping, panel_drawing;
+
 socket.on("update-clients", function (data) {
     
     //remove event handlers
@@ -50,48 +54,74 @@ socket.on("updateMappingForm", function (data) {
 });
 
 socket.on("newMappingForm", function (data) {
-
-    var canvas = document.getElementById("canvas");
-    var c2 = canvas.getContext("2d");
-
-    c2.beginPath();
-
-    var first = true;
+ 
+    polygon = panel_mapping.createPolygon();
 
     for(var i = 0; i < Object.size(data.points); i++) {
-        var x = data.points[i].x;
-        var y = data.points[i].y;
-
-        if (first) {
-            c2.moveTo(x, y);
-            first = false;
-        } else {
-            c2.lineTo(x, y);
-        }
+        var x = parseFloat(data.points[i].x);
+        var y = parseFloat(data.points[i].y);
+        polygon.addPointXY(x,y);
     }
 
-    c2.closePath();
-
     if(data.type === "painting")
-        c2.fillStyle = "rgb(0, 100, 200)";
+        polygon.getFill().setColor("rgb(0, 100, 200)");
     if(data.type === "picture")
-        c2.fillStyle = "rgb(255, 100, 100)";
+        polygon.getFill().setColor("rgb(255, 100, 100)");
     if(data.type === "window")
-        c2.fillStyle = "rgb(0, 0, 0)";
-    c2.fill();
+        polygon.getFill().setColor("rgb(0, 0, 0)");
+
+    //polygon.getStroke().setWeight(5);
+      //polygon.getStroke().setColor("rgb(0,0,255)");
+      polygon.getFill().setOpacity(0.5);
+      panel_mapping.addElement(polygon);
+
+});
+
+socket.on("newDrawer", function (data) {
+    drawings[data.id] = Array();
+    drawings[data.id].push(data.pos);
+});
+
+socket.on("movedDrawer", function (data) {
+
+    if(typeof drawings[data.id] === 'undefined') {
+        drawings[data.id] = Array();     
+    }
+    drawings[data.id].push(data.pos);
+
+    line = panel_drawing.createLine();
+
+    var drawing_points = drawings[data.id].length;
+    if(drawing_points > 1) {
+        var x = parseFloat(drawings[data.id][drawing_points-2][0]);
+        var y = parseFloat(drawings[data.id][drawing_points-2][1]);
+        line.setStartPointXY(x,y);
+        x = parseFloat(drawings[data.id][drawing_points-1][0]);
+        y = parseFloat(drawings[data.id][drawing_points-1][1]);
+        line.setEndPointXY(x,y);
+    }
+
+    line.getStroke().setWeight(1);
+    line.getStroke().setColor(data.color);
+    panel_drawing.addElement(line);
 
 });
 
 socket.on("mappingSize", function (data) {
 
     canvassize = data;
-    var canvas = document.getElementById("canvas");
-    $(canvas).height(canvassize.height);
-    $(canvas).attr("height", canvassize.height);
-    $(canvas).attr("width", canvassize.width);
-    var c2 = canvas.getContext("2d");
+    var mapping = document.getElementById("panel_mapping");
+    $(mapping).css({"height": canvassize.height, "width": canvassize.width});
 
-    c2.clearRect(0, 0, canvassize.width, canvassize.height);
+    var drawing = document.getElementById("panel_drawing");
+    $(drawing).css({"height": canvassize.height, "width": canvassize.width});
+
+    var stream = document.getElementById("stream");
+    $(stream).attr("height", canvassize.height);
+    $(stream).attr("width", canvassize.width);
+    var stream_embed = document.getElementById("stream_embed");
+    $(stream_embed).attr("height", canvassize.height);
+    $(stream_embed).attr("width", canvassize.width);
     
 });
 
@@ -116,6 +146,8 @@ var mobile = false;
 
 window.onload = function() {
 
+    panel_mapping = new jsgl.Panel(document.getElementById("panel_mapping"));
+    panel_drawing = new jsgl.Panel(document.getElementById("panel_drawing"));
 }
 
 /**

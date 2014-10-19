@@ -96,6 +96,23 @@ body {
 	margin-bottom: 5px;
 }
 
-#canvas {
-	border: 1px solid white;
+#mapping {
+	position: relative;
+}
+
+#digitalstream {
+	position: relative;
+	z-index: 100;
+	background: white;
+	opacity: 0.5;
+}
+
+#panel_mapping, #panel_drawing {
+	position: absolute !important;
+}
+
+#stream {
+	position: absolute;
+	z-index: 1;
+	overflow: hidden;
 }

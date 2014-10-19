@@ -40,6 +40,8 @@ function handler (request, response) {
             fs.readFile(filePath, function(error, content) {
                 if (error) {
                 	log("500 error");
+                	log(error);
+                	log(filePath);
                     response.writeHead(500);
                     response.end();
                 }
@@ -457,6 +459,25 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 			var data = decodeMappingString(value);
 			io_control.to("mapping-"+client_id).emit('newMappingForm', data);
 		}
+		else if(action == "moveto") {
+			var data = value.split(";");
+			var drawer_id = data[0];
+			var pos = data[1].split("|");
+			var col = rgbVecToHex(http_clients_col1[drawer_id]);
+			io_control.to("mapping-"+client_id).emit('newDrawer', {id: drawer_id, pos: pos, color: col});
+		}
+		else if(action == "lineto") {
+			var data = value.split(";");
+			var drawer_id = data[0];
+			var pos = data[1].split("|");
+			var col = rgbVecToHex(http_clients_col1[drawer_id]);
+			io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: col});
+		}
+		else if(action == "pulsing") {
+			var drawer_id = value;
+			var col = rgbVecToHex(http_clients_col1[drawer_id]);
+			io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: col});
+		}
 		
 		c.port = socket.remotePort;
 		c.address = socket.remoteAddress;
@@ -573,6 +594,19 @@ function rgbToHex(r, g, b) {
 	g = Math.round(g);
 	b = Math.round(b);
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+function rgbVecToHex(vec) {
+	if(typeof vec !== 'undefined' && 
+		vec != null && 
+		typeof vec.r !== 'undefined' && 
+		typeof vec.g !== 'undefined' && 
+		typeof vec.b !== 'undefined') {
+		return rgbToHex(vec.r,vec.g,vec.b);
+	}
+	else {
+		return "#000000";
+	}
 }
 
 Array.prototype.remove = function(from, to) {
