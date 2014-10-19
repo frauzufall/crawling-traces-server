@@ -57,6 +57,7 @@ var pos_sent = new Date().getTime();
 var max_send_speed = 50;
 
 function sendPos(newx,newy) {
+    console.log("sendpos");
 	var help = document.getElementById('help');
 	if(help!= null)
 		main.innerHTML = "";

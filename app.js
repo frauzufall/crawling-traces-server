@@ -63,7 +63,8 @@ function handler (request, response) {
 var fs = require('fs');
 var path = require('path');
 
-var io = require('socket.io')(httpServer);
+var ioParams = {'reconnection limit': 3000, 'max reconnection attempts': Number.MAX_VALUE, 'connect timeout':7000}
+var io = require('socket.io')(httpServer, ioParams);
 
 var io_control = io.of('/control');
 io_control.on('connection', function (socket) {
@@ -193,7 +194,7 @@ io_base.on('connection', function (socket) {
 });
 
 function getId(socket) {
-	return socket.request.connection.remoteAddress;
+	return String(socket.request.connection.remoteAddress).hashCode();
 }
 
 function newColor(ip, color) {
@@ -459,24 +460,17 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 			var data = decodeMappingString(value);
 			io_control.to("mapping-"+client_id).emit('newMappingForm', data);
 		}
-		else if(action == "moveto") {
+		else if(action == "lineto" || action == "moveto") {
 			var data = value.split(";");
 			var drawer_id = data[0];
 			var pos = data[1].split("|");
-			var col = rgbVecToHex(http_clients_col1[drawer_id]);
-			io_control.to("mapping-"+client_id).emit('newDrawer', {id: drawer_id, pos: pos, color: col});
-		}
-		else if(action == "lineto") {
-			var data = value.split(";");
-			var drawer_id = data[0];
-			var pos = data[1].split("|");
-			var col = rgbVecToHex(http_clients_col1[drawer_id]);
-			io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: col});
+			var color = rgbVecToHex(http_clients_col1[drawer_id]);
+			io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: color});
 		}
 		else if(action == "pulsing") {
 			var drawer_id = value;
-			var col = rgbVecToHex(http_clients_col1[drawer_id]);
-			io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: col});
+			var color = rgbVecToHex(http_clients_col1[drawer_id]);
+			io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: color});
 		}
 		
 		c.port = socket.remotePort;
@@ -656,4 +650,15 @@ if (!Object.keys) {
       return result;
     };
   }());
+}
+
+String.prototype.hashCode = function(){
+	var hash = 0;
+	if (this.length == 0) return hash;
+	for (i = 0; i < this.length; i++) {
+		char = this.charCodeAt(i);
+		hash = ((hash<<5)-hash)+char;
+		hash = hash & hash; // Convert to 32bit integer
+	}
+	return hash;
 }

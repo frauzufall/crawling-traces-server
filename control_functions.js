@@ -37,6 +37,7 @@ socket.on("update-clients", function (data) {
 socket.on("colorChanged", function (data) {
 
     $(".webclient-"+identify(data.id)).css({color: data.color});
+    setDrawingColor(data.id, data.color);
 
 });
 
@@ -77,33 +78,11 @@ socket.on("newMappingForm", function (data) {
 
 });
 
-socket.on("newDrawer", function (data) {
-    drawings[data.id] = Array();
-    drawings[data.id].push(data.pos);
-});
-
 socket.on("movedDrawer", function (data) {
 
-    if(typeof drawings[data.id] === 'undefined') {
-        drawings[data.id] = Array();     
-    }
-    drawings[data.id].push(data.pos);
-
-    line = panel_drawing.createLine();
-
-    var drawing_points = drawings[data.id].length;
-    if(drawing_points > 1) {
-        var x = parseFloat(drawings[data.id][drawing_points-2][0]);
-        var y = parseFloat(drawings[data.id][drawing_points-2][1]);
-        line.setStartPointXY(x,y);
-        x = parseFloat(drawings[data.id][drawing_points-1][0]);
-        y = parseFloat(drawings[data.id][drawing_points-1][1]);
-        line.setEndPointXY(x,y);
-    }
-
-    line.getStroke().setWeight(1);
-    line.getStroke().setColor(data.color);
-    panel_drawing.addElement(line);
+    var drawing = getDrawing(data.id);
+    drawing.getStroke().setColor(data.color);
+    drawing.addPointXY(parseFloat(data.pos[0]), parseFloat(data.pos[1]));
 
 });
 
@@ -141,6 +120,21 @@ socket.on('ready', function (data) {
     }
 
 });
+
+function getDrawing(id) {
+    if(typeof drawings[id] === 'undefined') {
+        var line = panel_drawing.createPolyline();
+        drawings[id] = line;
+        drawings[id].getStroke().setWeight(1);
+        panel_drawing.addElement(drawings[id]);
+    }
+    return drawings[id];
+}
+
+function setDrawingColor(id, color) {
+    var drawing = getDrawing(id);
+    drawing.getStroke().setColor(data.color);
+}
 
 var mobile = false;
 
