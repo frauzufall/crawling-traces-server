@@ -4,11 +4,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=0"/>
     <link type="text/css" href="style.css" rel="StyleSheet">
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="/lib/jquery-1.11.1.min.js"></script>
     <script type="text/javascript" src="/client_functions.js"></script>
     </head>
     <body>
 		<div id="main" class="action"><div id="help"><table><tr><td><b>Zeichnen</b></td><td>Gerade Linien mit dem Finger ziehen.</td></tr><tr><td><b>Farbe</b></td><td>Oben rechts: Aktuelle Zeichenfarbe.<br />Oben links: Neue Farbe aktivieren.</td></tr><tr><td><b>Position</b></td><td>Zur Orientierung Kreis rechts oben drücken.</td></tr></table></div></div>
 		<div id="header"><button id="newcolor"></button><!--<div id="title">R&amp;OM</div>--><button id="locate"></button></div>
 		<div id="line"></div>
+        <div class="msg"></div>
     </body>
 </html>

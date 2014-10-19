@@ -148,6 +148,8 @@ io_base.on('connection', function (socket) {
 
 	}
 
+	socket.emit('projections', {"num":tcp_clients_num});
+
   	socket.on('logStuff', function (data) {
     	if(http_clients_col1[ip] == null && data.setcolor) {
 			newColor(ip);
@@ -289,6 +291,13 @@ function updateClientList() {
 	
 	//send tcp and http clients to control page sockets
     io_control.emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
+
+    //tell draw client if any projection is connected
+    if(tcp_clients_drawers_know != tcp_clients_num) {
+
+    	io_base.emit('projections', {"num":tcp_clients_num});
+    	tcp_clients_drawers_know = tcp_clients_num;
+    }
     
 }
 
@@ -323,6 +332,7 @@ function Client (type) {
 
 var tcp_clients = new Array();
 var tcp_clients_num = 0;
+var tcp_clients_drawers_know = 0;
 
 var net = require("net");
 

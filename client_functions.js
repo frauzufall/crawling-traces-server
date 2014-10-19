@@ -17,6 +17,26 @@ socket.on('setColor', function(data) {
     }
 });
 
+socket.on('projections', function(data) {
+    if(data.num > 0) {
+        $(".msg").text("Deine Zeichnung wird gerade auf mindestens eine Wand projiziert.");
+        $(".msg").removeClass("error");
+        $(".msg").addClass("success");
+        $(".msg").show();
+        setTimeout(function() {
+            $(".msg").fadeOut(500, function() {
+                $(".msg").removeClass("success");
+            });
+        }, 3000);
+    }
+    else {
+        $(".msg").text("Aktuell werden deine Zeichnungen nirgendwo abgerufen. Versuche es zu einem anderen Zeitpunkt noch einmal.");
+        $(".msg").removeClass("success");
+        $(".msg").addClass("error");
+        $(".msg").show();
+    }
+});
+
 socket.on('ready', function (data) {
 
     /****************** GET DEVICE TYPE *******************/
@@ -57,8 +77,7 @@ var pos_sent = new Date().getTime();
 var max_send_speed = 50;
 
 function sendPos(newx,newy) {
-    console.log("sendpos");
-	var help = document.getElementById('help');
+    var help = document.getElementById('help');
 	if(help!= null)
 		main.innerHTML = "";
     var elapsed = new Date().getTime() - pos_sent;
