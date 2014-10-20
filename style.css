@@ -117,8 +117,16 @@ body {
 	overflow: hidden;
 }
 
+.dimmer-msg {
+	background: rgba(0,0,0,0.85);
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
 .msg {
-	display: none;
 	position: absolute;
 	bottom: 10px;
 	margin: 10px;

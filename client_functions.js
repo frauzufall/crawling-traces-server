@@ -22,9 +22,9 @@ socket.on('projections', function(data) {
         $(".msg").text("Deine Zeichnung wird gerade auf mindestens eine Wand projiziert.");
         $(".msg").removeClass("error");
         $(".msg").addClass("success");
-        $(".msg").show();
+        $(".dimmer-msg").show();
         setTimeout(function() {
-            $(".msg").fadeOut(500, function() {
+            $(".dimmer-msg").fadeOut(500, function() {
                 $(".msg").removeClass("success");
             });
         }, 3000);
@@ -33,8 +33,15 @@ socket.on('projections', function(data) {
         $(".msg").text("Aktuell werden deine Zeichnungen nirgendwo abgerufen. Versuche es zu einem anderen Zeitpunkt noch einmal.");
         $(".msg").removeClass("success");
         $(".msg").addClass("error");
-        $(".msg").show();
+        $(".dimmer-msg").show();
     }
+});
+
+socket.on('disconnect', function () {
+    $(".msg").text("Deine Verbindung wurde getrennt. Bitte lade die Seite neu.");
+    $(".msg").removeClass("success");
+    $(".msg").removeClass("error");
+    $(".dimmer-msg").show();
 });
 
 socket.on('ready', function (data) {
