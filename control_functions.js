@@ -133,7 +133,7 @@ function getDrawing(id) {
 
 function setDrawingColor(id, color) {
     var drawing = getDrawing(id);
-    drawing.getStroke().setColor(data.color);
+    drawing.getStroke().setColor(color);
 }
 
 var mobile = false;
@@ -167,10 +167,7 @@ function _addEventListener(element, eventName, handler, captureEvents){
 }
 
 function identify(ugly) {
-    if(ugly) {
-        ugly = ugly.split(".").join("")
-        return ugly;
-    }
+    return ugly;
 }
 
 function showMapping() {

@@ -64,7 +64,7 @@ var fs = require('fs');
 var path = require('path');
 
 var ioParams = {'reconnection limit': 3000, 'max reconnection attempts': Number.MAX_VALUE, 'connect timeout':7000}
-var io = require('socket.io')(httpServer, ioParams);
+var io = require('socket.io')(httpServer);
 
 var io_control = io.of('/control');
 io_control.on('connection', function (socket) {
