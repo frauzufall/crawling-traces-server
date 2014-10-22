@@ -95,7 +95,7 @@ io_base.on('connection', function (socket) {
 	var ip = getId(socket);
 	var unique_id = socket.id;
 
-	socket.join(ip);
+	socket.join("web-"+ip);
 
 	//check wether ip is or has been already there
 	if(http_clients[ip]) {
@@ -241,7 +241,7 @@ function newColor(ip, color) {
 		var hex1 = rgbToHex(res[0].r,res[0].g,res[0].b);
 		var hex2 = rgbToHex(res[1].r,res[1].g,res[1].b);
 		for(var i = 0; i < http_clients[ip].length; i++) {
-			io_base.to(ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
+			io_base.to("web-"+ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
 		}
 		io_control.emit('colorChanged', {id: ip, color: hex1});
 
