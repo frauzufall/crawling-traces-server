@@ -8,11 +8,10 @@ log("--------------------- new session -----------------------");
 var httpServer = require('http').createServer(handler);
 httpServer.listen(httpPort);
 
-// has the following structure: {"192.168.178.1": {"sslkwerh12", "asdflaij213", ..}}
+// has the following structure: {"sslkwerh12", "asdflaij213", ..}
 var http_clients = Array();
 var http_clients_col1 = Array();
 var http_clients_col2 = Array();
-var http_clients_new = Array();
 
 function handler (request, response) {
      
@@ -91,62 +90,25 @@ io_control.on('connection', function (socket) {
 var io_base = io.of('/draw');
 io_base.on('connection', function (socket) {
 
-	var knownclient = false;
 	var ip = getId(socket);
-	var unique_id = socket.id;
 
-	socket.join("web-"+ip);
-
-	//check wether ip is or has been already there
-	if(http_clients[ip]) {
-		knownclient = true;
-	}
-	else {
-		http_clients[ip] = new Array();
-	}
-
-	http_clients_new[ip] = !knownclient;
+	socket.join(ip);
 
 	//save socket id to active client list
-	http_clients[ip].push(unique_id);
+	http_clients.push(ip);
 
-	if(!knownclient) {
-		//ip is new
 		
-    	http_clients_col1[ip] = null;
-    	http_clients_col2[ip] = null;
-    	
-    	//tell projections about new client
-    	var msg = ip + ':new:web';
-    	sendToAllOfs(msg);
+	http_clients_col1[ip] = null;
+	http_clients_col2[ip] = null;
+	
+	//tell projections about new client
+	var msg = ip + ':new:web';
+	sendToAllOfs(msg);
 
-    	//tell socket to initialize and to ask for a new color
-    	socket.emit('ready', {setcolor: true});
-    	
-    	log("new web client: " + ip);
-	}
-	else {
-		
-		//tell socket to initialize and not ask for a color, previous color should be used
-		socket.emit('ready', {setcolor: false});
-    	
-    	//create new random color
-    	var cols = newColor();
-    	//check wether there is a saved color pack from previous session of the ip
-    	if(http_clients_col1[ip] && http_clients_col2[ip]) {
-			cols[0] = http_clients_col1[ip];
-	    	cols[1] = http_clients_col2[ip];
-    	}
-    	//send this color pack to projections and to socket
-    	newColor(ip,cols);
-    
-    	//tell projections that client reappeared (can be used to change ip)
-    	var msg = ip + ':id:' + ip;
-    	sendToAllOfs(msg);
-
-    	log("web client logged in again: " + ip);
-
-	}
+	//tell socket to initialize and to ask for a new color
+	socket.emit('ready', {setcolor: true});
+	
+	log("new web client: " + ip);
 
 	socket.emit('projections', {"num":tcp_clients_num});
 
@@ -159,31 +121,18 @@ io_base.on('connection', function (socket) {
   	});
 
   	socket.on('initNewColor', function (data) {
-  		if(http_clients_new[ip] || !data.pageload) {
-			newColor(ip);
-  		}
+		newColor(ip);
   	});
 
   	socket.on('disconnect', function () {
 
   		//remove the socket from local storage
-  		http_clients[ip].splice(http_clients[ip].indexOf(unique_id), 1);
+  		http_clients.splice(http_clients.indexOf(ip), 1);
 
-  		//check wether there is another tab open
-	    var socketactive = false;
-	    if(http_clients[ip].length > 0) {
-	    	socketactive = true;
-	    }
-
-	    if(!socketactive) {
-	    	//no other tab is open
-
-			//tell projections that socket is gone
-			var msg = ip + ':gone:web';
-			sendToAllOfs(msg);
-			log("gone web client: " + ip);
-
-	    }
+		//tell projections that socket is gone
+		var msg = ip + ':gone:web';
+		sendToAllOfs(msg);
+		log("gone web client: " + ip);
 
 		//update list of sockets on control page
 	    updateClientList();
@@ -196,7 +145,8 @@ io_base.on('connection', function (socket) {
 });
 
 function getId(socket) {
-	return String(socket.request.connection.remoteAddress).hashCode();
+	//return String("web-"+String(socket.request.connection.remoteAddress).hashCode());
+	return String(socket.id);
 }
 
 function newColor(ip, color) {
@@ -240,9 +190,7 @@ function newColor(ip, color) {
 		//send to all webclients with the same ip
 		var hex1 = rgbToHex(res[0].r,res[0].g,res[0].b);
 		var hex2 = rgbToHex(res[1].r,res[1].g,res[1].b);
-		for(var i = 0; i < http_clients[ip].length; i++) {
-			io_base.to("web-"+ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
-		}
+		io_base.to(ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
 		io_control.emit('colorChanged', {id: ip, color: hex1});
 
 	}
@@ -275,16 +223,15 @@ function updateClientList() {
 
 	//store http socket ips and the related color in array
 	var web_clients_min = new Array();
-	var http_ips = Object.keys(http_clients);
-	for(var i = 0; i < http_ips.length; i++) {
+	for(var i = 0; i < http_clients.length; i++) {
 		//log("webclient: "+http_ips[i] + " [" + http_clients[http_ips[i]].length + "]");
-		var col = http_clients_col1[http_ips[i]];
+		var col = http_clients_col1[http_clients[i]];
 		var hex_col = null;
 		if(col) {
 			hex_col = rgbToHex(col.r,col.g,col.b);
 		}
 		web_clients_min.push({ 
-			id : http_ips[i], 
+			id : http_clients[i], 
 			color: hex_col
 		});
 	}
