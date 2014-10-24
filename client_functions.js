@@ -19,7 +19,7 @@ socket.on('setColor', function(data) {
 
 socket.on('projections', function(data) {
     if(data.num > 0) {
-        $(".msg").text("Deine Zeichnung wird gerade auf mindestens eine Wand projiziert.");
+        $(".msg").text("Du bist mit der Projektionsfläche verbunden.");
         $(".msg").removeClass("error");
         $(".msg").addClass("success");
         $(".dimmer-msg").show();
@@ -30,7 +30,7 @@ socket.on('projections', function(data) {
         }, 3000);
     }
     else {
-        $(".msg").text("Aktuell werden deine Zeichnungen nirgendwo abgerufen. Versuche es zu einem anderen Zeitpunkt noch einmal.");
+        $(".msg").html("Aktuell ist keine Zeichenfläche aktiv. Versuche es später noch einmal oder frag bei <a href='mailto:mail@frauzufall.de'>mail@frauzufall.de</a> nach.");
         $(".msg").removeClass("success");
         $(".msg").addClass("error");
         $(".dimmer-msg").show();
@@ -38,7 +38,7 @@ socket.on('projections', function(data) {
 });
 
 socket.on('disconnect', function () {
-    $(".msg").text("Deine Verbindung wurde getrennt. Bitte lade die Seite neu.");
+    $(".msg").text("Die Verbindung zum Server wurde getrennt.");
     $(".msg").removeClass("success");
     $(".msg").removeClass("error");
     $(".dimmer-msg").show();
@@ -89,7 +89,16 @@ function sendPos(newx,newy) {
 		main.innerHTML = "";
     var elapsed = new Date().getTime() - pos_sent;
     if(elapsed > max_send_speed) {
-        socket.emit("logStuff", {msg: 'pos:' + newx + '|' + newy});
+        socket = io('/draw');
+        if(socket.connect()) {
+            socket.emit("logStuff", {msg: 'pos:' + newx + '|' + newy});
+        }
+        else {
+            $(".msg").text("Deine Verbindung wurde getrennt. Bitte lade die Seite neu.");
+            $(".msg").removeClass("success");
+            $(".msg").removeClass("error");
+            $(".dimmer-msg").show();
+        }
         pos_sent = new Date().getTime();
     }
 }

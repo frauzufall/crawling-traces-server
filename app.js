@@ -19,8 +19,8 @@ function handler (request, response) {
     if (filePath == './draw')
         filePath = './index.html';
 
-    if (filePath == './control')
-        filePath = './control.html';
+    // if (filePath == './control')
+    //     filePath = './control.html';
          
     var extname = path.extname(filePath);
     var contentType = 'text/html';
@@ -63,29 +63,29 @@ var fs = require('fs');
 var path = require('path');
 
 var ioParams = {'reconnection limit': 3000, 'max reconnection attempts': Number.MAX_VALUE, 'connect timeout':7000}
-var io = require('socket.io')(httpServer);
+var io = require('socket.io')(httpServer, {pingTimeout: 3000});
 
-var io_control = io.of('/control');
-io_control.on('connection', function (socket) {
+// var io_control = io.of('/control');
+// io_control.on('connection', function (socket) {
 
-	var ip = getId(socket);
+// 	var ip = getId(socket);
 
-	updateClientList();
+// 	updateClientList();
 
-	socket.on('joinMapping', function (data) {
-  		socket.join("mapping-"+data.client);
-  		sendToOf(data.client, ip + ":getmapping:xxx");
-  	});
+// 	socket.on('joinMapping', function (data) {
+//   		socket.join("mapping-"+data.client);
+//   		sendToOf(data.client, ip + ":getmapping:xxx");
+//   	});
 
-  	socket.on('updateMappingForm', function (data) {
-    	sendToOf(data.client, ip + ":" + data.msg);
-  	});
+//   	socket.on('updateMappingForm', function (data) {
+//     	sendToOf(data.client, ip + ":" + data.msg);
+//   	});
 
-  	socket.on('newMappingForm', function (data) {
-    	sendToOf(data.client, ip + ":" + data.msg);
-  	});
+//   	socket.on('newMappingForm', function (data) {
+//     	sendToOf(data.client, ip + ":" + data.msg);
+//   	});
 
-});
+// });
 
 var io_base = io.of('/draw');
 io_base.on('connection', function (socket) {
@@ -116,8 +116,10 @@ io_base.on('connection', function (socket) {
     	if(http_clients_col1[ip] == null && data.setcolor) {
 			newColor(ip);
 		}
-	    sendToAllOfs(ip + ":" + data.msg);
-	    io_control.emit('client-active', {"id":ip});
+		if(typeof data.msg !== 'undefined') {
+			sendToAllOfs(ip + ":" + data.msg);
+		}
+	    //io_control.emit('client-active', {"id":ip});
   	});
 
   	socket.on('initNewColor', function (data) {
@@ -191,7 +193,7 @@ function newColor(ip, color) {
 		var hex1 = rgbToHex(res[0].r,res[0].g,res[0].b);
 		var hex2 = rgbToHex(res[1].r,res[1].g,res[1].b);
 		io_base.to(ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
-		io_control.emit('colorChanged', {id: ip, color: hex1});
+		//io_control.emit('colorChanged', {id: ip, color: hex1});
 
 	}
 	
@@ -213,31 +215,31 @@ function log(text) {
 function updateClientList() {
 	//log("web: " + Object.keys(http_clients).length + " tcp: " + tcp_clients.length);
 
-	//store tcp ids in array
-	var tcp_clients_min = new Array();
-	for(var i = 0; i < tcp_clients.length; i++) {
-		tcp_clients_min.push({ 
-			id: tcp_clients[i].id 
-		});
-	}
+	// //store tcp ids in array
+	// var tcp_clients_min = new Array();
+	// for(var i = 0; i < tcp_clients.length; i++) {
+	// 	tcp_clients_min.push({ 
+	// 		id: tcp_clients[i].id 
+	// 	});
+	// }
 
-	//store http socket ips and the related color in array
-	var web_clients_min = new Array();
-	for(var i = 0; i < http_clients.length; i++) {
-		//log("webclient: "+http_ips[i] + " [" + http_clients[http_ips[i]].length + "]");
-		var col = http_clients_col1[http_clients[i]];
-		var hex_col = null;
-		if(col) {
-			hex_col = rgbToHex(col.r,col.g,col.b);
-		}
-		web_clients_min.push({ 
-			id : http_clients[i], 
-			color: hex_col
-		});
-	}
+	// //store http socket ips and the related color in array
+	// var web_clients_min = new Array();
+	// for(var i = 0; i < http_clients.length; i++) {
+	// 	//log("webclient: "+http_ips[i] + " [" + http_clients[http_ips[i]].length + "]");
+	// 	var col = http_clients_col1[http_clients[i]];
+	// 	var hex_col = null;
+	// 	if(col) {
+	// 		hex_col = rgbToHex(col.r,col.g,col.b);
+	// 	}
+	// 	web_clients_min.push({ 
+	// 		id : http_clients[i], 
+	// 		color: hex_col
+	// 	});
+	// }
 	
-	//send tcp and http clients to control page sockets
-    io_control.emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
+	// //send tcp and http clients to control page sockets
+ //    io_control.emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
 
     //tell draw client if any projection is connected
     if(tcp_clients_drawers_know != tcp_clients_num) {
@@ -404,31 +406,31 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 				}
 			}
 		}
-		else if(action == "mappingsize") {
-			var mappingsize = value.split("|");
-			if(mappingsize.length == 2) {
-				io_control.to("mapping-"+client_id).emit("mappingSize", {width: mappingsize[0], height: mappingsize[1]});
-			}
-		}
-		else if(action == "updatemappingform") {
-			io_control.to("mapping-"+client_id).emit('updateMappingForm', decodeMappingString(value));
-		}
-		else if(action == "newmappingform") {
-			var data = decodeMappingString(value);
-			io_control.to("mapping-"+client_id).emit('newMappingForm', data);
-		}
-		else if(action == "lineto" || action == "moveto") {
-			var data = value.split(";");
-			var drawer_id = data[0];
-			var pos = data[1].split("|");
-			var color = rgbVecToHex(http_clients_col1[drawer_id]);
-			io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: color});
-		}
-		else if(action == "pulsing") {
-			var drawer_id = value;
-			var color = rgbVecToHex(http_clients_col1[drawer_id]);
-			io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: color});
-		}
+		// else if(action == "mappingsize") {
+		// 	var mappingsize = value.split("|");
+		// 	if(mappingsize.length == 2) {
+		// 		io_control.to("mapping-"+client_id).emit("mappingSize", {width: mappingsize[0], height: mappingsize[1]});
+		// 	}
+		// }
+		// else if(action == "updatemappingform") {
+		// 	io_control.to("mapping-"+client_id).emit('updateMappingForm', decodeMappingString(value));
+		// }
+		// else if(action == "newmappingform") {
+		// 	var data = decodeMappingString(value);
+		// 	io_control.to("mapping-"+client_id).emit('newMappingForm', data);
+		// }
+		// else if(action == "lineto" || action == "moveto") {
+		// 	var data = value.split(";");
+		// 	var drawer_id = data[0];
+		// 	var pos = data[1].split("|");
+		// 	var color = rgbVecToHex(http_clients_col1[drawer_id]);
+		// 	io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: color});
+		// }
+		// else if(action == "pulsing") {
+		// 	var drawer_id = value;
+		// 	var color = rgbVecToHex(http_clients_col1[drawer_id]);
+		// 	io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: color});
+		// }
 		
 		c.port = socket.remotePort;
 		c.address = socket.remoteAddress;
