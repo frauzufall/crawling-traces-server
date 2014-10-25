@@ -62,11 +62,6 @@ a {
 	z-index:-10;
 }
 
-#main.control {
-	color: white;
-	clear: both;
-}
-
 #help {
 	padding-top: 90px;
 }
@@ -82,43 +77,6 @@ a {
 	padding:0px; 
 	margin:0px; 
 	line-height:1px;
-}
-
-.control {
-	font-family: Verdana;
-}
-
-.control h1 {
-	border-bottom: 1px solid white;
-	display: block;
-	margin-left: 13px;
-}
-
-.control h2 {
-	margin-left: 13px;
-	margin-top:20px;
-	margin-bottom: 5px;
-}
-
-#mapping {
-	position: relative;
-}
-
-#digitalstream {
-	position: relative;
-	z-index: 100;
-	background: white;
-	opacity: 0.5;
-}
-
-#panel_mapping, #panel_drawing {
-	position: absolute !important;
-}
-
-#stream {
-	position: absolute;
-	z-index: 1;
-	overflow: hidden;
 }
 
 .dimmer-msg {

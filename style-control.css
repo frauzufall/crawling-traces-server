@@ -1,0 +1,135 @@
+button, .button {
+	width:70px;
+	height:70px;
+	padding: 0;
+	border: 0;
+}
+
+body {
+	background: black;
+	margin:0;
+	padding:0;
+	font-family: Verdana;
+}
+
+a {
+	color: inherit;
+}
+
+#header {
+	text-align:right;
+	margin:10px;
+}
+
+#main.control {
+	color: white;
+	clear: both;
+}
+
+.control {
+	font-family: Verdana;
+}
+
+.control h2 {
+	margin-left: 13px;
+	margin-top:20px;
+	margin-bottom: 5px;
+}
+
+#mapping {
+	position: relative;
+	margin: 0;
+	width: 1280px;
+}
+
+#digitalstream {
+	position: relative;
+	z-index: 100;
+	background: white;
+	opacity: 0.5;
+}
+
+#panel_mapping, #panel_drawing {
+	position: absolute !important;
+}
+
+#stream {
+	position: absolute;
+	z-index: 1;
+	overflow: hidden;
+}
+
+.dimmer-msg {
+	background: rgba(0,0,0,0.85);
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+.msg {
+	position: relative;
+	max-width: 500px;
+	margin: 20px auto 0 auto;
+	padding: 10px;
+	background: black;
+	color: white;
+	border: 10px solid rgba(255, 255, 255, 0.85);
+	font-size: 110%;
+	line-height: 1.6;
+}
+
+.msg.error {
+	border: 10px solid rgba(255, 0,0, 0.85);
+}
+
+.msg.success {
+	border: 10px solid rgba(0,255,0, 0.85);
+}
+
+#additional {
+	background: #2da1e3;
+	position: absolute;
+	height: 100%;
+	right: 0;
+	width: 300px;
+	top: 0;
+	color: black;
+	padding-top: 130px;
+	z-index: 101;
+}
+
+#additional p {
+	padding: 10px;
+}
+
+#additional a {
+
+}
+
+#additional .important {
+	font-size: 110%;
+	background: rgba(255,255,255,0.5);
+}
+
+#information {
+	position: absolute;
+	top: 0;
+	right: 0;
+	z-index: 102;
+}
+
+#title {
+	background: #FF9D42;
+	color: black;
+	margin: 0;
+	padding: 10px;
+}
+
+#information p {
+	background: #FF425A;
+	color: black;
+	float: right;
+	padding: 10px;
+}

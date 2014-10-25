@@ -419,6 +419,9 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 			var data = decodeMappingString(value);
 			io_control.to("mapping-"+client_id).emit('newMappingForm', data);
 		}
+		else if(action == "clearmappingforms") {
+			io_control.to("mapping-"+client_id).emit('clearMappingForms');
+		}
 		else if(action == "lineto" || action == "moveto") {
 			var data = value.split(";");
 			var drawer_id = data[0];
