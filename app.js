@@ -9,9 +9,9 @@ var httpServer = require('http').createServer(handler);
 httpServer.listen(httpPort);
 
 // has the following structure: {"sslkwerh12", "asdflaij213", ..}
-var http_clients = Array();
-var http_clients_col1 = Array();
-var http_clients_col2 = Array();
+var http_clients = new Array();
+var http_clients_col1 = new Array();
+var http_clients_col2 = new Array();
 
 function handler (request, response) {
      
@@ -72,18 +72,18 @@ io_control.on('connection', function (socket) {
 
 	updateClientList();
 
-	socket.on('joinMapping', function (data) {
-  		socket.join("mapping-"+data.client);
-  		sendToOf(data.client, ip + ":getmapping:xxx");
-  	});
+	// socket.on('joinMapping', function (data) {
+ //  		socket.join("mapping-"+data.client);
+ //  		sendToOf(data.client, ip + ":getmapping:xxx");
+ //  	});
 
-  	socket.on('updateMappingForm', function (data) {
-    	sendToOf(data.client, ip + ":" + data.msg);
-  	});
+ //  	socket.on('updateMappingForm', function (data) {
+ //    	sendToOf(data.client, ip + ":" + data.msg);
+ //  	});
 
-  	socket.on('newMappingForm', function (data) {
-    	sendToOf(data.client, ip + ":" + data.msg);
-  	});
+ //  	socket.on('newMappingForm', function (data) {
+ //    	sendToOf(data.client, ip + ":" + data.msg);
+ //  	});
 
 });
 
@@ -155,7 +155,7 @@ function newColor(ip, color) {
 
 	//res[0] .. new color
 	//res[1] .. next random color
-	var res = Array();
+	var res = new Array();
 	var idset = typeof ip !== 'undefined';
 	var colorset = typeof color !== 'undefined';
 
@@ -346,7 +346,9 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 
 			//no existing client found
 
-			//tcp_clients.push(remoteAddress + ':' + remotePort);
+			if(action == "new") {
+				
+//tcp_clients.push(remoteAddress + ':' + remotePort);
 			tcp_clients.push(new Client());
 			tcp_clients_num++;
 
@@ -354,10 +356,7 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 
 			c.id = client_id;
 
-			if(action == "new")
-				c.type = value;
-			else 
-				c.type = "unknown";
+			c.type = value;
 
 			log("new tcp " + c.type + " client: " + c.id);
 
@@ -373,6 +372,7 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 			}
 
 			updateClientList();
+			}
 
 		}
 		else if (i < tcp_clients_num) {
