@@ -19,7 +19,7 @@ socket.on('setColor', function(data) {
 
 socket.on('projections', function(data) {
     if(data.num > 0) {
-        $(".msg").text("Du bist mit der Projektionsfläche verbunden.");
+        $(".msg").text("Du bist mit der Projektionsfläche verbunden. (num: " + data.num + ")");
         $(".msg").removeClass("error");
         $(".msg").addClass("success");
         $(".dimmer-msg").show();

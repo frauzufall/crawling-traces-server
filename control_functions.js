@@ -2,7 +2,8 @@ var socket = io('/control');
 
 var canvassize = {x: 0, y: 0};
 
-var drawings = Array();
+var drawings = new Array();
+var drawing_points = new Array();
 
 var panel_mapping, panel_drawing;
 
@@ -56,33 +57,31 @@ socket.on("updateMappingForm", function (data) {
 
 socket.on("newMappingForm", function (data) {
  
-    polygon = panel_mapping.createPolygon();
+    polygon = panel_mapping.polygon();
 
+    var pointstring = "";
     for(var i = 0; i < Object.size(data.points); i++) {
-        var x = parseFloat(data.points[i].x);
-        var y = parseFloat(data.points[i].y);
-        polygon.addPointXY(x,y);
+        var x = data.points[i].x;
+        var y = data.points[i].y;
+        pointstring += x + "," + y + " ";
     }
+    polygon.plot(pointstring);
 
     if(data.type === "painting")
-        polygon.getFill().setColor("rgb(0, 100, 200)");
+        polygon.fill({color:"rgb(0, 100, 200)", opacity: 0.5});
     if(data.type === "picture")
-        polygon.getFill().setColor("rgb(255, 100, 100)");
+        polygon.fill({color:"rgb(255, 100, 100)", opacity: 0.5});
     if(data.type === "window")
-        polygon.getFill().setColor("rgb(0, 0, 0)");
-
-    //polygon.getStroke().setWeight(5);
-      //polygon.getStroke().setColor("rgb(0,0,255)");
-      polygon.getFill().setOpacity(0.5);
-      panel_mapping.addElement(polygon);
+        polygon.fill({color:"rgb(0, 0, 0)", opacity: 0.5});
 
 });
 
 socket.on("movedDrawer", function (data) {
 
     var drawing = getDrawing(data.id);
-    drawing.getStroke().setColor(data.color);
-    drawing.addPointXY(parseFloat(data.pos[0]), parseFloat(data.pos[1]));
+    drawing.stroke({color: data.color, width: 1});
+    drawing_points[data.id] += data.pos[0] + "," + data.pos[1] + " ";
+    drawing.plot(drawing_points[data.id]);
 
 });
 
@@ -123,51 +122,26 @@ socket.on('ready', function (data) {
 
 function getDrawing(id) {
     if(typeof drawings[id] === 'undefined') {
-        var line = panel_drawing.createPolyline();
+        var line = panel_drawing.polyline().fill("none").stroke({ width: 1 });
         drawings[id] = line;
-        drawings[id].getStroke().setWeight(1);
-        panel_drawing.addElement(drawings[id]);
+        drawing_points[id] = "";
     }
     return drawings[id];
 }
 
-function setDrawingColor(id, color) {
+function setDrawingColor(id, _color) {
     var drawing = getDrawing(id);
-    drawing.getStroke().setColor(color);
+    drawing.stroke({color: _color, width: 1});
 }
 
 var mobile = false;
 
 window.onload = function() {
 
-    panel_mapping = new jsgl.Panel(document.getElementById("panel_mapping"));
-    panel_drawing = new jsgl.Panel(document.getElementById("panel_drawing"));
-}
-
-/**
-     * Helper method for cross-browser registering of event listeners.
-     * @param {Element} element
-     * @param {String} eventName
-     * @param {Function} handler
-     * @param {Boolean} captureEvents
-     */
-function _addEventListener(element, eventName, handler, captureEvents){
-    if (document.addEventListener) {
-        // W3C
-        element.addEventListener(eventName, handler, captureEvents);
-    }
-    else
-        if (document.attachEvent) {
-            // IE
-            element.attachEvent('on' + eventName, handler);
-        }
-        else {
-            element['on' + eventName] = handler;
-        }
-}
-
-function identify(ugly) {
-    return ugly;
+    // panel_mapping = new jsgl.Panel(document.getElementById("panel_mapping"));
+    // panel_drawing = new jsgl.Panel(document.getElementById("panel_drawing"));
+    panel_mapping = SVG("panel_mapping");
+    panel_drawing = SVG("panel_drawing");
 }
 
 function showMapping() {
@@ -175,6 +149,10 @@ function showMapping() {
     $("#mapping").show();
     $("#main").hide();
     
+}
+
+function identify(val) {
+    return val;
 }
 
 Object.size = function(obj) {

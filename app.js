@@ -72,18 +72,18 @@ io_control.on('connection', function (socket) {
 
 	updateClientList();
 
-	// socket.on('joinMapping', function (data) {
- //  		socket.join("mapping-"+data.client);
- //  		sendToOf(data.client, ip + ":getmapping:xxx");
- //  	});
+	socket.on('joinMapping', function (data) {
+  		socket.join("mapping-"+data.client);
+  		sendToOf(data.client, ip + ":getmapping:xxx");
+  	});
 
- //  	socket.on('updateMappingForm', function (data) {
- //    	sendToOf(data.client, ip + ":" + data.msg);
- //  	});
+  	socket.on('updateMappingForm', function (data) {
+    	sendToOf(data.client, ip + ":" + data.msg);
+  	});
 
- //  	socket.on('newMappingForm', function (data) {
- //    	sendToOf(data.client, ip + ":" + data.msg);
- //  	});
+  	socket.on('newMappingForm', function (data) {
+    	sendToOf(data.client, ip + ":" + data.msg);
+  	});
 
 });
 
@@ -406,31 +406,31 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 				}
 			}
 		}
-		// else if(action == "mappingsize") {
-		// 	var mappingsize = value.split("|");
-		// 	if(mappingsize.length == 2) {
-		// 		io_control.to("mapping-"+client_id).emit("mappingSize", {width: mappingsize[0], height: mappingsize[1]});
-		// 	}
-		// }
-		// else if(action == "updatemappingform") {
-		// 	io_control.to("mapping-"+client_id).emit('updateMappingForm', decodeMappingString(value));
-		// }
-		// else if(action == "newmappingform") {
-		// 	var data = decodeMappingString(value);
-		// 	io_control.to("mapping-"+client_id).emit('newMappingForm', data);
-		// }
-		// else if(action == "lineto" || action == "moveto") {
-		// 	var data = value.split(";");
-		// 	var drawer_id = data[0];
-		// 	var pos = data[1].split("|");
-		// 	var color = rgbVecToHex(http_clients_col1[drawer_id]);
-		// 	io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: color});
-		// }
-		// else if(action == "pulsing") {
-		// 	var drawer_id = value;
-		// 	var color = rgbVecToHex(http_clients_col1[drawer_id]);
-		// 	io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: color});
-		// }
+		else if(action == "mappingsize") {
+			var mappingsize = value.split("|");
+			if(mappingsize.length == 2) {
+				io_control.to("mapping-"+client_id).emit("mappingSize", {width: mappingsize[0], height: mappingsize[1]});
+			}
+		}
+		else if(action == "updatemappingform") {
+			io_control.to("mapping-"+client_id).emit('updateMappingForm', decodeMappingString(value));
+		}
+		else if(action == "newmappingform") {
+			var data = decodeMappingString(value);
+			io_control.to("mapping-"+client_id).emit('newMappingForm', data);
+		}
+		else if(action == "lineto" || action == "moveto") {
+			var data = value.split(";");
+			var drawer_id = data[0];
+			var pos = data[1].split("|");
+			var color = rgbVecToHex(http_clients_col1[drawer_id]);
+			io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: color});
+		}
+		else if(action == "pulsing") {
+			var drawer_id = value;
+			var color = rgbVecToHex(http_clients_col1[drawer_id]);
+			io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: color});
+		}
 		
 		c.port = socket.remotePort;
 		c.address = socket.remoteAddress;
