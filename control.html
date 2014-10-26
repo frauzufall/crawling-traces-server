@@ -6,39 +6,32 @@
     <script type="text/javascript" src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="/lib/jquery-1.11.1.min.js"></script>
     <script type="text/javascript" src="/lib/svg.min.js"></script>
+    <script type="text/javascript" src="/lib/ustream-embedapi.js"></script>
     <script type="text/javascript" src="/control_functions.js"></script>
     </head>
     <body>
 		<div id="main" class="control">
             <div id="information">
-                <h1 id="title">Crawling Traces - Plaint Our Wall</h1>
-                <p>Participants: <span class="participants-num"></span></p>
+                <h1 id="title">Crawling Traces - Paint Our Wall</h1>
+                <p>Participants: <span class="participants-num"></span> | Viewers: <span class="viewers-num"></span></p>
             </div><!-- #information -->
             <div id="additional">
                 <div id="explanation">
                     <h2>HOW TO</h2>
                     <p class="important">Grab your smartphone and open this URL: <a href="frauzufall.de/wand" target="_blank">frauzufall.de/wand</a>.</p>
                     <p class="important">You can now draw an our wall by wiping the screen of your smartphone. You will see drawing lines as a projection on our wall in the video stream. </p>
-                    <p>There can be a time telay up to more than one minute. This is why you will also see digital lines as a preview of what you and other participants are drawing.</p>
+                    <p>There can be a time delay up to one minute. This is why you will also see digital lines as a preview of what you and other participants are drawing.</p>
                     <p>No information about your connection will be stored, you can draw completely anonymous. You can also open multiple tabs or reload the page on your phone to draw another line in a different color.</p>
                 </div>
             </div><!-- #help -->
             <div id="mapping">
-
-                <object id="stream" width="480" height="302" classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000">
-                  <param name="flashvars" value="cid=19121934&amp;autoplay=false&amp;locale=de_DE"/>
-                  <param name="allowfullscreen" value="true"/>
-                  <param name="allowscriptaccess" value="always"/>
-                  <param name="src" value="http://www.ustream.tv/flash/viewer.swf"/>
-                  <param name="wmode" value="transparent">
-                  <embed id="stream_embed" flashvars="cid=19121934&amp;autoplay=false&amp;locale=de_DE" width="480" height="302" allowfullscreen="true" allowscriptaccess="always" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash" wmode="transparent"></embed>
-                </object>
-
+                <iframe id="stream" width="480" height="302" src="http://www.ustream.tv/embed/19121934?v=3&amp;wmode=opaque&amp;autoplay=true&amp;controls=false" scrolling="no" frameborder="0" style="border: 0px none transparent;">    </iframe>
                 <div id="digitalstream">
                     <div id="panel_mapping"></div>
                     <div id="panel_drawing"></div>
                 </div>
             </div><!-- #mapping -->
+            <div class="dimmer dimmer-msg"><div class="msg"></div></div>
         </div><!-- #main.control -->
     </body>
 </html>

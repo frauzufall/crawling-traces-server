@@ -1,77 +1,4 @@
-var socket = io('/draw');
-
-socket.on('setColor', function(data) {
-    color1 = data["hex1"];
-    color2 = data["hex2"];
-    //console.log("setcolor: " + color1);
-    linecolor = color1;
-    var header = document.getElementById('header');
-    if(header != null) {
-        header.style.backgroundColor = color1;
-        header.style.backgroundImage = "url(img/crissling.png)";
-    }
-    var newcolor = document.getElementById('newcolor');
-    if(newcolor != null) {
-        newcolor.style.backgroundColor = color2;
-        newcolor.style.backgroundImage = "url(img/crissling.png)";
-    }
-});
-
-socket.on('projections', function(data) {
-    if(data.num > 0) {
-        $(".msg").text("Du bist mit der Projektionsfläche verbunden. (num: " + data.num + ")");
-        $(".msg").removeClass("error");
-        $(".msg").addClass("success");
-        $(".dimmer-msg").show();
-        setTimeout(function() {
-            $(".dimmer-msg").fadeOut(500, function() {
-                $(".msg").removeClass("success");
-            });
-        }, 3000);
-    }
-    else {
-        $(".msg").html("Aktuell ist keine Zeichenfläche aktiv. Versuche es später noch einmal oder frag bei <a href='mailto:mail@frauzufall.de'>mail@frauzufall.de</a> nach.");
-        $(".msg").removeClass("success");
-        $(".msg").addClass("error");
-        $(".dimmer-msg").show();
-    }
-});
-
-socket.on('disconnect', function () {
-    $(".msg").text("Die Verbindung zum Server wurde getrennt.");
-    $(".msg").removeClass("success");
-    $(".msg").removeClass("error");
-    $(".dimmer-msg").show();
-});
-
-socket.on('ready', function (data) {
-
-    /****************** GET DEVICE TYPE *******************/
-
-    var type = "PC or other";
-    if ((navigator.userAgent.match(/iPhone/) || navigator.userAgent.match(/iPod/)) || navigator.userAgent.match(/Android/)) {
-        mobile = true;
-        if(navigator.userAgent.match(/iPhone/))
-            type="iphone";
-        if(navigator.userAgent.match(/iPod/))
-            type="ipod";
-        if(navigator.userAgent.match(/Android/))
-            type="android";
-        /*
-        $("<link/>", {
-            rel: "stylesheet",
-            type: "text/css",
-            href: "mobile.css"
-        }).appendTo("head");
-        */
-        steps = steps_mobile;
-        speed = speed_mobile;
-        
-    }
-
-    socket.emit("logStuff", {type: type, setcolor: data.setcolor});
-
-});
+var socket;
 
 var speed = 10;
 var steps = 1;
@@ -118,6 +45,81 @@ function sendNewColorAfterPageLoad() {
 var line;
 
 window.onload = function() {
+
+    socket = io('/draw');
+
+    socket.on('setColor', function(data) {
+        color1 = data["hex1"];
+        color2 = data["hex2"];
+        //console.log("setcolor: " + color1);
+        linecolor = color1;
+        var header = document.getElementById('header');
+        if(header != null) {
+            header.style.backgroundColor = color1;
+            header.style.backgroundImage = "url(img/crissling.png)";
+        }
+        var newcolor = document.getElementById('newcolor');
+        if(newcolor != null) {
+            newcolor.style.backgroundColor = color2;
+            newcolor.style.backgroundImage = "url(img/crissling.png)";
+        }
+    });
+
+    socket.on('projections', function(data) {
+        if(data.num > 0) {
+            $(".msg").text("Du bist mit der Projektionsfläche verbunden.");
+            $(".msg").removeClass("error");
+            $(".msg").addClass("success");
+            $(".dimmer-msg").show();
+            setTimeout(function() {
+                $(".dimmer-msg").fadeOut(500, function() {
+                    $(".msg").removeClass("success");
+                });
+            }, 3000);
+        }
+        else {
+            $(".msg").html("Aktuell ist keine Zeichenfläche aktiv. Versuche es später noch einmal oder frag bei <a href='mailto:mail@frauzufall.de'>mail@frauzufall.de</a> nach.");
+            $(".msg").removeClass("success");
+            $(".msg").addClass("error");
+            $(".dimmer-msg").show();
+        }
+    });
+
+    socket.on('disconnect', function () {
+        $(".msg").text("Die Verbindung zum Server wurde getrennt.");
+        $(".msg").removeClass("success");
+        $(".msg").removeClass("error");
+        $(".dimmer-msg").show();
+    });
+
+    socket.on('ready', function (data) {
+
+        /****************** GET DEVICE TYPE *******************/
+
+        var type = "PC or other";
+        if ((navigator.userAgent.match(/iPhone/) || navigator.userAgent.match(/iPod/)) || navigator.userAgent.match(/Android/)) {
+            mobile = true;
+            if(navigator.userAgent.match(/iPhone/))
+                type="iphone";
+            if(navigator.userAgent.match(/iPod/))
+                type="ipod";
+            if(navigator.userAgent.match(/Android/))
+                type="android";
+            /*
+            $("<link/>", {
+                rel: "stylesheet",
+                type: "text/css",
+                href: "mobile.css"
+            }).appendTo("head");
+            */
+            steps = steps_mobile;
+            speed = speed_mobile;
+            
+        }
+
+        socket.emit("logStuff", {type: type, setcolor: data.setcolor});
+
+    });
 
     /*************** EVENTS *****************************/
 

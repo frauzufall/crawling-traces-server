@@ -66,6 +66,7 @@ a {
 	left: 0;
 	width: 100%;
 	height: 100%;
+	z-index: 200;
 }
 
 .msg {
@@ -89,13 +90,11 @@ a {
 }
 
 #additional {
-	background: #2da1e3;
 	position: absolute;
 	height: 100%;
 	right: 0;
 	width: 300px;
 	top: 0;
-	color: black;
 	padding-top: 130px;
 	z-index: 101;
 }
@@ -110,7 +109,7 @@ a {
 
 #additional .important {
 	font-size: 110%;
-	background: rgba(255,255,255,0.5);
+	background: rgba(255,255,255,0.2);
 }
 
 #information {

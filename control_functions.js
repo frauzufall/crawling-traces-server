@@ -1,6 +1,9 @@
 var socket;
 
-var canvassize = {x: 0, y: 0};
+var videosize = {width: 560, height: 315};
+var canvassize = {width: 560, height: 315};
+var video_ratio_w = videosize.width/videosize.height;
+var video_ratio_h = videosize.height/videosize.width;
 
 var drawings = new Array();
 var drawing_points = new Array();
@@ -25,9 +28,56 @@ function setDrawingColor(id, _color) {
     drawing.stroke({color: _color, width: 1});
 }
 
+function clearMappingForms() {
+    panel_mapping.clear();
+    while (mappings.length > 0) { mappings.pop(); }
+}
+
+function resizeCanvas() {
+    var scalex = 1;
+    var scaley = 1;
+    var w_w = parseFloat($(window).width()-$("#additional").width());
+    var w_h = parseFloat($("#additional").height());
+    var c_w = parseFloat(canvassize.width);
+    var c_h = parseFloat(canvassize.height);
+    var ratio_w = parseFloat(w_w) / parseFloat(canvassize.width);
+    var ratio_h = parseFloat(w_h) / parseFloat(canvassize.height);
+    if(c_h*ratio_w > c_h) {
+        //cannot set to full width, set to height of sidebar
+        videosize.height = w_h;
+        videosize.width = videosize.height*video_ratio_w;
+    }
+    else {
+        videosize.width = w_w;
+        videosize.height = videosize.width*video_ratio_h;
+    }
+
+    scalex = videosize.width/canvassize.width;
+    scaley = videosize.height/canvassize.height;
+
+    panel_mapping.transform({scaleX: scalex, scaleY:scaley});
+    panel_drawing.transform({scaleX: scalex, scaleY:scaley});
+
+    var stream = document.getElementById("stream");
+    $(stream).attr("height", videosize.height);
+    $(stream).attr("width", videosize.width);
+    var stream_embed = document.getElementById("stream_embed");
+    $(stream_embed).attr("height", videosize.height);
+    $(stream_embed).attr("width", videosize.width);
+}
+
 var mobile = false;
 
 window.onload = function() {
+
+    var viewer = UstreamEmbed('stream');
+    setTimeout(function() {
+        viewer.callMethod('play');
+    }, 5000);
+
+    $( window ).resize(function() {
+        resizeCanvas();
+    });
 
     panel_mapping = SVG("panel_mapping");
     panel_drawing = SVG("panel_drawing");
@@ -35,61 +85,50 @@ window.onload = function() {
     socket = io('/control');
 
     socket.on("update-clients", function (data) {
-        
-        // //remove event handlers
-        // $(".startmapping").off();
-        // $("#tcp-clients").empty();
-        // //populate list
-        // $.each(data.tcpclients, function(a, obj) {
-        //     $('#tcp-clients').append("<li clientid='" + obj.id + "'><span>" + obj.id + "</span> <span class='startmapping'>mapping</span></li>");
-        // });
-        // //update list item count
-        // $(".projections-num").html("("+data.tcpclients.length+")");
-        // //attach event handler to mapping link
-        // $(".startmapping").on("click", function() {
-        //     var id = $(this).parent("li").attr("clientid");
-        //     socket.emit("joinMapping", {client: id});
-        //     showMapping();
-        // })
 
         if(!mapping_loaded && data.tcpclients.length > 0) {
+            mapping_loaded = true;
             var id = data.tcpclients[0].id;
             socket.emit("joinMapping", {client: id});
+            $(".msg").text("Du bist mit der Projektionsfläche verbunden.");
+            $(".msg").removeClass("error");
+            $(".msg").addClass("success");
+            $(".dimmer-msg").show();
+            setTimeout(function() {
+                $(".dimmer-msg").fadeOut(500, function() {
+                    $(".msg").removeClass("success");
+                });
+            }, 3000);
         }
         
-        //$("#web-clients").empty();
-        // $.each(data.httpclients, function(a, obj) {
-        //     $('#web-clients').append("<li class='webclient-"+identify(obj.id)+"'><span>" + obj.id + "</span></li>");
-        //     var client = $(".webclient-"+identify(obj.id));
-        //     client.css({color: obj.color});
-        // });
         $(".participants-num").html(data.httpclients.length);
+        $(".viewers-num").html(data.controlclients_num);
+
+        if(data.tcpclients.length == 0) {
+            $(".msg").html("Aktuell ist keine Zeichenfläche aktiv. Versuche es später noch einmal oder frag bei <a href='mailto:mail@frauzufall.de'>mail@frauzufall.de</a> nach.");
+            $(".msg").removeClass("success");
+            $(".msg").addClass("error");
+            $(".dimmer-msg").show();
+            mapping_loaded = false;
+            clearMappingForms();
+        }
 
     });
 
     socket.on("colorChanged", function (data) {
 
-        $(".webclient-"+identify(data.id)).css({color: data.color});
         setDrawingColor(data.id, data.color);
 
     });
 
-    socket.on("client-active", function (data) {
-
-        var client = $(".webclient-"+identify(data.id));
-
-        client.fadeOut(300, function() {
-            $(this).fadeIn(300);
-        });
-        
+    socket.on("client-active", function (data) {        
     });
 
     socket.on("updateMappingForm", function (data) {
     });
 
     socket.on("clearMappingForms", function (data) {
-        panel_mapping.clear();
-        while (mappings.length > 0) { mappings.pop(); }
+        clearMappingForms();
     });
 
     socket.on("newMappingForm", function (data) {
@@ -118,27 +157,23 @@ window.onload = function() {
     socket.on("movedDrawer", function (data) {
 
         var drawing = getDrawing(data.id);
-        drawing.stroke({color: data.color, width: 1});
         drawing_points[data.id] += data.pos[0] + "," + data.pos[1] + " ";
         drawing.plot(drawing_points[data.id]);
+        drawing.stroke({color: data.color, width: 1});
 
     });
 
     socket.on("mappingSize", function (data) {
 
         canvassize = data;
+
         var mapping = document.getElementById("panel_mapping");
         $(mapping).css({"height": canvassize.height, "width": canvassize.width});
 
         var drawing = document.getElementById("panel_drawing");
         $(drawing).css({"height": canvassize.height, "width": canvassize.width});
 
-        var stream = document.getElementById("stream");
-        $(stream).attr("height", canvassize.height);
-        $(stream).attr("width", canvassize.width);
-        var stream_embed = document.getElementById("stream_embed");
-        $(stream_embed).attr("height", canvassize.height);
-        $(stream_embed).attr("width", canvassize.width);
+        resizeCanvas();
         
     });
 
@@ -157,11 +192,16 @@ window.onload = function() {
                 type="android";
         }
 
-    });
-}
+        clearMappingForms();
 
-function identify(val) {
-    return val;
+    });
+
+    socket.on('disconnect', function () {
+        $(".msg").text("Die Verbindung zum Server wurde getrennt.");
+        $(".msg").removeClass("success");
+        $(".msg").removeClass("error");
+        $(".dimmer-msg").show();
+    });
 }
 
 Object.size = function(obj) {

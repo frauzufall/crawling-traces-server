@@ -239,7 +239,10 @@ function updateClientList() {
 	}
 	
 	//send tcp and http clients to control page sockets
-    io_control.emit('update-clients', {"tcpclients":tcp_clients_min, "httpclients": web_clients_min});
+    io_control.emit('update-clients', {
+    	"tcpclients":tcp_clients_min, 
+    	"httpclients": web_clients_min, 
+    	"controlclients_num": io_control.sockets.length});
 
     //tell draw client if any projection is connected
     if(tcp_clients_drawers_know != tcp_clients_num) {
@@ -348,30 +351,30 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 
 			if(action == "new") {
 				
-//tcp_clients.push(remoteAddress + ':' + remotePort);
-			tcp_clients.push(new Client());
-			tcp_clients_num++;
+				//tcp_clients.push(remoteAddress + ':' + remotePort);
+				tcp_clients.push(new Client());
+				tcp_clients_num++;
 
-			c = tcp_clients[tcp_clients_num-1];
+				c = tcp_clients[tcp_clients_num-1];
 
-			c.id = client_id;
+				c.id = client_id;
 
-			c.type = value;
+				c.type = value;
 
-			log("new tcp " + c.type + " client: " + c.id);
+				log("new tcp " + c.type + " client: " + c.id);
 
-			if(c.type == "of") {
-				var message = new Buffer("Welcome new tcp " + c.type + " client: " + c.id);
-				socket.write(message + "\n");
-				if(!c.cleared) {
-					log("clearing projections");
-					message = new Buffer("all:clear:xxx");
+				if(c.type == "of") {
+					var message = new Buffer("Welcome new tcp " + c.type + " client: " + c.id);
 					socket.write(message + "\n");
-					c.cleared = true;
+					if(!c.cleared) {
+						log("clearing projections");
+						message = new Buffer("all:clear:xxx");
+						socket.write(message + "\n");
+						c.cleared = true;
+					}
 				}
-			}
 
-			updateClientList();
+				updateClientList();
 			}
 
 		}
