@@ -9,7 +9,7 @@ var drawings = new Array();
 var drawing_markers = new Array();
 var drawing_points = new Array();
 
-var max_drawing_points = 10;
+var max_drawing_points = 42;
 
 var mappings = new Array();
 
