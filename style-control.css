@@ -46,7 +46,6 @@ a {
 	position: relative;
 	z-index: 100;
 	background: white;
-	opacity: 0.5;
 }
 
 #panel_mapping, #panel_drawing {
