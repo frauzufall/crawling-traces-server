@@ -6,7 +6,10 @@ var video_ratio_w = videosize.width/videosize.height;
 var video_ratio_h = videosize.height/videosize.width;
 
 var drawings = new Array();
+var drawing_markers = new Array();
 var drawing_points = new Array();
+
+var max_drawing_points = 10;
 
 var mappings = new Array();
 
@@ -16,8 +19,10 @@ var mapping_loaded = false;
 
 function getDrawing(id) {
     if(typeof drawings[id] === 'undefined') {
-        var line = panel_drawing.polyline().fill("none").stroke({ width: 1 });
+        var line = panel_drawing.polyline().fill("none").stroke({ width: 2 });
+        var marker = panel_drawing.circle(10).fill("none");
         drawings[id] = line;
+        drawing_markers[id] = marker;
         drawing_points[id] = "";
     }
     return drawings[id];
@@ -25,7 +30,8 @@ function getDrawing(id) {
 
 function setDrawingColor(id, _color) {
     var drawing = getDrawing(id);
-    drawing.stroke({color: _color, width: 1});
+    drawing.stroke({color: _color, width: 2});
+    drawing_markers[id].stroke({color: _color, width: 2});
 }
 
 function clearMappingForms() {
@@ -70,18 +76,29 @@ var mobile = false;
 
 window.onload = function() {
 
+    $(window).keypress(function( event ) {
+    if ( event.which == 109 ) {
+        //"m" is pressed
+        $("#panel_mapping").toggle();
+    }
+    });
+
+    //load ustream player api to automatically start the stream
     var viewer = UstreamEmbed('stream');
     setTimeout(function() {
         viewer.callMethod('play');
     }, 5000);
 
-    $( window ).resize(function() {
+    //resize video stream and digital drawing stream if page gets resized
+    $(window).resize(function() {
         resizeCanvas();
     });
 
+    //init drawing stream and mapping panels
     panel_mapping = SVG("panel_mapping");
     panel_drawing = SVG("panel_drawing");
 
+    //connect to io socket
     socket = io('/control');
 
     socket.on("update-clients", function (data) {
@@ -124,6 +141,16 @@ window.onload = function() {
     socket.on("client-active", function (data) {        
     });
 
+    socket.on("client-gone", function (data) {
+        if(typeof drawings[data.id] !== 'undefined') {
+            drawings[data.id].remove();
+            drawings.splice(drawings.indexOf(data.id),1);
+            drawing_markers[data.id].remove();
+            drawing_markers.splice(drawing_markers.indexOf(data.id),1);
+            drawing_points.splice(drawing_points.indexOf(data.id),1);
+        }
+    });
+
     socket.on("updateMappingForm", function (data) {
     });
 
@@ -157,9 +184,25 @@ window.onload = function() {
     socket.on("movedDrawer", function (data) {
 
         var drawing = getDrawing(data.id);
+        var ps = drawing_points[data.id].split(" ");
+        while(ps.length > max_drawing_points-1) {
+            ps.shift();
+        }
+        drawing_points[data.id] = ps.join(" ");
         drawing_points[data.id] += data.pos[0] + "," + data.pos[1] + " ";
         drawing.plot(drawing_points[data.id]);
-        drawing.stroke({color: data.color, width: 1});
+        drawing.stroke({color: data.color, width: 2});
+        drawing_markers[data.id].stroke({color: data.color, width: 2});
+        drawing_markers[data.id].x(data.pos[0]).y(data.pos[1]);
+
+    });
+
+    socket.on("pulsingDrawer", function (data) {
+
+        var drawing = getDrawing(data.id);
+        drawing_markers[data.id].animate().radius(20).after(function(){
+            this.animate().radius(5);
+        });
 
     });
 

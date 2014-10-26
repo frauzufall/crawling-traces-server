@@ -132,3 +132,7 @@ a {
 	float: right;
 	padding: 10px;
 }
+
+#panel_mapping {
+	display: none;
+}

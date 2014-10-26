@@ -136,6 +136,8 @@ io_base.on('connection', function (socket) {
 		sendToAllOfs(msg);
 		log("gone web client: " + ip);
 
+		io_control.emit('client-gone', {"id":ip});
+
 		//update list of sockets on control page
 	    updateClientList();
 		
@@ -435,7 +437,7 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 		else if(action == "pulsing") {
 			var drawer_id = value;
 			var color = rgbVecToHex(http_clients_col1[drawer_id]);
-			io_control.to("mapping-"+client_id).emit('pulsingDrawer', {id: drawer_id, color: color});
+			io_control.emit('pulsingDrawer', {id: drawer_id, color: color});
 		}
 		
 		c.port = socket.remotePort;
@@ -557,7 +559,7 @@ function rgbVecToHex(vec) {
 		return rgbToHex(vec.r,vec.g,vec.b);
 	}
 	else {
-		return "#000000";
+		return "#ffffff";
 	}
 }
 
