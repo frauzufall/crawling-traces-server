@@ -19,7 +19,7 @@ var mapping_loaded = false;
 
 function getDrawing(id) {
     if(typeof drawings[id] === 'undefined') {
-        var line = panel_drawing.polyline().fill("none").stroke({ width: 2 });
+        var line = panel_drawing.polyline().fill("none").stroke({ width: 4 });
         var marker = panel_drawing.circle(10).fill("none");
         drawings[id] = line;
         drawing_markers[id] = marker;
@@ -30,8 +30,8 @@ function getDrawing(id) {
 
 function setDrawingColor(id, _color) {
     var drawing = getDrawing(id);
-    drawing.stroke({color: _color, width: 2});
-    drawing_markers[id].stroke({color: _color, width: 2});
+    drawing.stroke({color: _color, width: 4});
+    drawing_markers[id].stroke({color: _color, width: 4});
 }
 
 function clearMappingForms() {
@@ -191,8 +191,8 @@ window.onload = function() {
         drawing_points[data.id] = ps.join(" ");
         drawing_points[data.id] += data.pos[0] + "," + data.pos[1] + " ";
         drawing.plot(drawing_points[data.id]);
-        drawing.stroke({color: data.color, width: 2});
-        drawing_markers[data.id].stroke({color: data.color, width: 2});
+        drawing.stroke({color: data.color, width: 4});
+        drawing_markers[data.id].stroke({color: data.color, width: 4});
         drawing_markers[data.id].x(data.pos[0]).y(data.pos[1]);
 
     });
