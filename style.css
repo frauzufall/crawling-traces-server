@@ -78,6 +78,7 @@ a {
 	margin:0px; 
 	line-height:1px;
 	opacity: 0;
+	-ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
 }
 
 .dimmer-msg {
