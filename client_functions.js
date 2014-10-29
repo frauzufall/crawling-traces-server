@@ -310,9 +310,11 @@ function getTransformProperty(element) {
         'WebkitTransform',
         'msTransform',
         'MozTransform',
-        'OTransform'
+        'OTransform',
+        'sandTransform'
     ];
     var p;
+    console.log(element.style);
     while (p = properties.shift()) {
         if (typeof element.style[p] != 'undefined') {
             return p;
