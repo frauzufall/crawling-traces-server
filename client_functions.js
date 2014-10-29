@@ -158,7 +158,9 @@ function startmouse(ev) {
     start_x = ev.clientX;
     start_y = ev.clientY;
     line.style.background = 0;
-    line.style.opacity = 1;
+    if(getTransformProperty(line)) {
+        line.style.opacity = 1;
+    }
 }
 
 function movemouse(ev) {
@@ -169,9 +171,10 @@ function movemouse(ev) {
 
 function endmouse(ev) {
     moving = false;
-    connect(start_x,start_y,ev.clientX,ev.clientY,linecolor,3,line);
+    if(connect(start_x,start_y,ev.clientX,ev.clientY,linecolor,3,line)) {
+        fade('line');
+    }
     sendPos(ev.clientX-start_x,ev.clientY-start_y);
-    fade('line');
 }
 
 function starttouch(ev) {
@@ -184,15 +187,18 @@ function starttouch(ev) {
     start_y = pos.y;
     
     line.style.background = 0;
-    line.style.opacity = 1;
+    if(getTransformProperty(line)) {
+        line.style.opacity = 1;
+    }
 
 }
 
 function movetouch(ev) {
 	ev.preventDefault();
 	var pos = getCoords(ev);
-	line.style.opacity = 1;
-    connect(start_x,start_y,pos.x,pos.y,linecolor,3,line);
+    if(connect(start_x,start_y,pos.x,pos.y,linecolor,3,line)) {
+        line.style.opacity = 1;
+    }
 }
 
 function endtouch(ev) {
@@ -200,11 +206,13 @@ function endtouch(ev) {
     moving = false;
 
     var pos = getCoords(ev);
-    connect(start_x,start_y,pos.x,pos.y,linecolor,3,line);
+    if(connect(start_x,start_y,pos.x,pos.y,linecolor,3,line)) {
+        fade('line');
+    }
 
     sendPos(pos.x-start_x,pos.y-start_y);
     
-    fade('line');
+    
 
 }
 
@@ -296,18 +304,23 @@ function connect(x1,y1,x2,y2, color, thickness,line) { // draw a line connecting
     line.style.left = cx;
     line.style.top = cy;
     line.style.width = length;
-    //var transform = getTransformProperty(line);
-    //if(transform) {
-	//	line.style[transform] = "rotate(" + angle + "deg)";
-	//}
-    var rotatestr = "rotate(" + angle + "deg)";
-    $(line).css({
-        "-moz-transform": rotatestr,  /* FF3.5/3.6 */
-        "-o-transform": rotatestr,  /* Opera 10.5 */
-        "-webkit-transform": rotatestr,  /* Saf3.1+ */
-        "transform": rotatestr,  /* Newer browsers (incl IE9) */
-        "-sand-transform": rotatestr //fix for IE
-    })
+    var transform = getTransformProperty(line);
+    if(transform) {
+		line.style[transform] = "rotate(" + angle + "deg)";
+        return true;
+	}
+    else {
+        return false;
+    }
+
+    // var rotatestr = "rotate(" + angle + "deg)";
+    // $(line).css({
+    //     "-moz-transform": rotatestr,  /* FF3.5/3.6 */
+    //     "-o-transform": rotatestr,  /* Opera 10.5 */
+    //     "-webkit-transform": rotatestr,  /* Saf3.1+ */
+    //     "transform": rotatestr,  /* Newer browsers (incl IE9) */
+    //     "-sand-transform": rotatestr //fix for IE
+    // });
 }
 
 function getTransformProperty(element) {
