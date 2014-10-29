@@ -291,15 +291,23 @@ function connect(x1,y1,x2,y2, color, thickness,line) { // draw a line connecting
     // angle
     var angle = Math.atan2((y1-y2),(x1-x2))*(180/Math.PI);
     // make hr
-    var transform = getTransformProperty(line);
     line.style.backgroundColor = color;
     line.style.height = thickness;
     line.style.left = cx;
     line.style.top = cy;
     line.style.width = length;
-    if(transform) {
-		line.style[transform] = "rotate(" + angle + "deg)";
-	}
+    //var transform = getTransformProperty(line);
+    //if(transform) {
+	//	line.style[transform] = "rotate(" + angle + "deg)";
+	//}
+    var rotatestr = "rotate(" + angle + "deg)";
+    $(line).css({
+        "-moz-transform": rotatestr,  /* FF3.5/3.6 */
+        "-o-transform": rotatestr,  /* Opera 10.5 */
+        "-webkit-transform": rotatestr,  /* Saf3.1+ */
+        "transform": rotatestr,  /* Newer browsers (incl IE9) */
+        "-sand-transform": rotatestr //fix for IE
+    })
 }
 
 function getTransformProperty(element) {
@@ -310,11 +318,9 @@ function getTransformProperty(element) {
         'WebkitTransform',
         'msTransform',
         'MozTransform',
-        'OTransform',
-        'sandTransform'
+        'OTransform'
     ];
     var p;
-    console.log(element.style);
     while (p = properties.shift()) {
         if (typeof element.style[p] != 'undefined') {
             return p;
