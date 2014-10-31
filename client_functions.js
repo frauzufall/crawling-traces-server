@@ -10,6 +10,9 @@ var linecolor = "#000";
 var pos_sent = new Date().getTime();
 var max_send_speed = 50;
 
+var random_move_interval;
+var random_moves_running = false;
+
 function sendPos(newx,newy) {
     var help = document.getElementById('help');
 	if(help!= null)
@@ -262,6 +265,18 @@ var keyfunction = function(e) {
         case 40:
             sendPos(0,1);
             break;
+        case 65:
+        case 97:
+            if(!random_moves_running) {
+                random_moves_running = true;
+                //random_move_interval = window.setInterval(function () {sendRandomMove()}, 200);
+                sendRandomMove();
+            }
+            else {
+                random_moves_running = false;
+                window.clearInterval(random_move_interval);
+            }
+            break;
     }
 }
 
@@ -404,4 +419,14 @@ function animateFade(lastTick, eid)
 	 
 	  setTimeout("animateFade(" + curTick + ",'" + eid + "')", 33);
   }
+}
+
+function sendRandomMove() {
+    var x = Math.random()*300-150;
+    var y = Math.random()*300-150;
+    var time = Math.random()*1000;
+    sendPos(x,y);
+    if(random_moves_running) {
+        random_move_interval = window.setTimeout(function () {sendRandomMove()}, time);
+    }
 }
