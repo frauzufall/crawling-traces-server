@@ -430,9 +430,11 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 		else if(action == "lineto" || action == "moveto") {
 			var data = value.split(";");
 			var drawer_id = data[0];
-			var pos = data[1].split("|");
-			var color = rgbVecToHex(http_clients_col1[drawer_id]);
-			io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: color});
+			if(typeof data[1] !== 'undefined') {
+				var pos = data[1].split("|");
+				var color = rgbVecToHex(http_clients_col1[drawer_id]);
+				io_control.to("mapping-"+client_id).emit('movedDrawer', {id: drawer_id, pos: pos, color: color});	
+			}
 		}
 		else if(action == "pulsing") {
 			var drawer_id = value;
