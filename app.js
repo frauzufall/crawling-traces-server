@@ -442,9 +442,11 @@ function processTcpMsg(client_id, action, value, socket, orig_msg) {
 			io_control.emit('pulsingDrawer', {id: drawer_id, color: color});
 		}
 		
-		c.port = socket.remotePort;
-		c.address = socket.remoteAddress;
-		c.socket = socket;
+		if(typeof c !== 'undefined') {
+			c.port = socket.remotePort;
+			c.address = socket.remoteAddress;
+			c.socket = socket;
+		}
 	}
 
 }
