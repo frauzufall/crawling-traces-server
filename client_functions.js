@@ -13,10 +13,15 @@ var max_send_speed = 50;
 var random_move_interval;
 var random_moves_running = false;
 
+var lines_till_help_fades = 20;
+var line_count = 0;
+
 function sendPos(newx,newy) {
+    line_count++;
     var help = document.getElementById('help');
-	if(help!= null)
+	if(help!= null && line_count > lines_till_help_fades) {
 		main.innerHTML = "";
+    }
     var elapsed = new Date().getTime() - pos_sent;
     if(elapsed > max_send_speed) {
         socket = io('/draw');
