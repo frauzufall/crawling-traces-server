@@ -10,18 +10,21 @@ var linecolor = "#000";
 var pos_sent = new Date().getTime();
 var max_send_speed = 50;
 
-var lines_till_help_fades = 20;
-var line_count = 0;
+var random_move_interval;
+var random_moves_running = false;
+var random_word;
+var random_word_length = 0;
+var random_word_step = 0;
+var last_random_word_point = {x:0, y:0};
+
+var btn_word_stop, btn_word_start, btn_clean_all, btn_clean_me;
+var txt_word;
 
 function sendPos(newx,newy) {
-    line_count++;
-    var help = document.getElementById('help');
-	if(help!= null && line_count > lines_till_help_fades) {
-		main.innerHTML = "";
-    }
+    
     var elapsed = new Date().getTime() - pos_sent;
     if(elapsed > max_send_speed) {
-        socket = io('/draw');
+        socket = io('/simulate');
         if(socket.connect()) {
             socket.emit("logStuff", {msg: 'pos:' + newx + '|' + newy});
         }
@@ -51,7 +54,16 @@ var line;
 
 window.onload = function() {
 
-    socket = io('/draw');
+    btn_clean_me = $("#clean_me");
+    btn_clean_all = $("#clean_all");
+    btn_word_start = $("#word_start");
+    btn_word_stop = $("#word_stop");
+    txt_word = $("#word");
+
+    btn_word_stop.hide();
+    txt_word.hide();
+
+    socket = io('/simulate');
 
     socket.on('setColor', function(data) {
         color1 = data["hex1"];
@@ -144,6 +156,11 @@ window.onload = function() {
     
     _addEventListener(document.getElementById('newcolor'),"touchstart",sendNewColor);
     _addEventListener(document.getElementById('newcolor'),"mouseup",sendNewColor);
+
+    btn_word_start.on("click touchstart", function() {drawWord();});
+    btn_word_stop.on("click touchstart", function() {stopDrawWord();});
+    btn_clean_me.on("click touchstart", function() {socket.emit("clearme"); });
+    btn_clean_all.on("click touchstart", function() {socket.emit("clearall"); });
     
     line = document.getElementById("line");
     
@@ -266,6 +283,10 @@ var keyfunction = function(e) {
         case 115:
         case 40:
             sendPos(0,1);
+            break;
+        case 65:
+        case 97:
+            drawWord();
             break;
     }
 }
@@ -409,4 +430,119 @@ function animateFade(lastTick, eid)
 	 
 	  setTimeout("animateFade(" + curTick + ",'" + eid + "')", 33);
   }
+}
+
+function sendRandomMove() {
+    var x = Math.random()*300-150;
+    var y = Math.random()*300-150;
+    var time = Math.random()*1000;
+    sendPos(x,y);
+    if(random_moves_running) {
+        random_move_interval = window.setTimeout(function () {sendRandomMove()}, time);
+    }
+}
+
+function sendRandomWord() {
+    opentype.load('fonts/Roboto-Black.ttf', function (err, font) {
+        if (err) {
+             alert('Font could not be loaded: ' + err);
+        } else {
+
+            var str = randomstring(3);
+
+            console.log(str);
+
+            $.ajax({
+              url: "http://de.wiktionary.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:Substantiv_%28Deutsch%29&cmsort=sortkey&cmstartsortkeyprefix="+str+"&cmlimit=1&format=json&rawcontinue",
+              dataType: "jsonp",
+              cache: true,
+              success: function (data) {
+                var word = data.query.categorymembers[0].title;
+                txt_word.text(word);
+                txt_word.show();
+                btn_word_stop.show();
+                // Construct a Path object containing the letter shapes of the given text.
+                // The other parameters are x, y and fontSize.
+                // Note that y is the position of the baseline.
+                var path = font.getPath(word, 0, 0, 820);
+                random_word = path.commands;
+                random_word_length = random_word.length;
+                random_word_step = 0;
+
+                sendRandomWordPoint();
+              }
+
+            });
+            
+        }
+    });
+}
+
+function sendRandomWordPoint() {
+    if(random_word_step < random_word_length) {
+        var t = random_word[random_word_step].type;
+        if(t != "Z") {
+            var p = convertPathPoint(random_word[random_word_step]);
+            var send = {};
+            send.x = p.x - last_random_word_point.x;
+            send.y = p.y - last_random_word_point.y;
+            var time = Math.random()*200+200;
+            sendPos(send.x,send.y); 
+            last_random_word_point = p;   
+        }
+        
+        random_word_step++;
+
+        random_move_interval = window.setTimeout(function () {sendRandomWordPoint()}, time);
+    }
+}
+
+function convertPathPoint(pathpoint) {
+    var last = {};
+    switch(pathpoint.type) {
+        default:
+        last.x = pathpoint.x+Math.random() *22-11;
+        last.y = pathpoint.y+Math.random() *22-11;
+        return last;
+    }
+}
+
+function toHex(str) {
+    var hex = '';
+    for(var i=0;i<str.length;i++) {
+        hex += '\x76';// +str.charCodeAt(i).toString(16);
+    }
+    return hex;
+}
+
+function randomstring(L) {
+    var text = "";
+    var possible = "abcdefghijklmnopqrstuvwxyz";
+
+    for( var i=0; i < L; i++ )
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+    return text;
+}
+
+function drawWord() {
+    if(random_moves_running) {
+        window.clearInterval(random_move_interval);
+        socket.emit("clearme");
+        txt_word.hide();
+        btn_word_stop.hide();
+    }
+    console.log("sending random word");
+    random_moves_running = true;
+    sendRandomWord();
+
+}
+
+function stopDrawWord() {
+    if(random_moves_running) {
+        random_moves_running = false;
+        window.clearInterval(random_move_interval);
+        txt_word.hide();
+        btn_word_stop.hide();
+    }
 }

@@ -111,3 +111,32 @@ a {
 .msg.success {
 	border: 10px solid rgba(0,255,0, 0.85);
 }
+
+#main.simulation {
+	margin-top: 80px;
+}
+
+#main.simulation div {
+	min-height: 60px;
+	background: white;
+	color:black;
+	width: 70px;
+	height: 70px;
+	float: left;
+}
+
+#main.simulation span {
+	background: #aaa;
+	color:#333;
+	display: block;
+	width: 100%;
+	float :none;
+}
+
+#main.simulation {
+	position: absolute;
+	z-index:100;
+	bottom: 0;
+	background: black;
+	height: 80px;
+}

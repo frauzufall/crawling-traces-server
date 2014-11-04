@@ -21,6 +21,9 @@ function handler (request, response) {
 
     if (filePath == './control')
         filePath = './control.html';
+
+    if (filePath == './simulate')
+        filePath = './simulate.html';
          
     var extname = path.extname(filePath);
     var contentType = 'text/html';
@@ -148,6 +151,78 @@ io_base.on('connection', function (socket) {
 
 });
 
+var io_simulate = io.of('/simulate');
+io_simulate.on('connection', function (socket) {
+
+	var ip = getId(socket);
+
+	socket.join(ip);
+
+	//save socket id to active client list
+	http_clients.push(ip);
+
+		
+	http_clients_col1[ip] = null;
+	http_clients_col2[ip] = null;
+	
+	//tell projections about new client
+	var msg = ip + ':new:web';
+	sendToAllOfs(msg);
+
+	//tell socket to initialize and to ask for a new color
+	socket.emit('ready', {setcolor: true});
+	
+	log("new simulate web client: " + ip);
+
+	socket.emit('projections', {"num":tcp_clients_num});
+
+  	socket.on('logStuff', function (data) {
+    	if(http_clients_col1[ip] == null && data.setcolor) {
+			newColor(ip);
+		}
+		if(typeof data.msg !== 'undefined') {
+			sendToAllOfs(ip + ":" + data.msg);
+		}
+	    io_control.emit('client-active', {"id":ip});
+  	});
+
+  	socket.on('initNewColor', function (data) {
+		newColor(ip);
+  	});
+
+  	socket.on('clearall', function (data) {
+		sendToAllOfs("all:clear:xxx");
+  	});
+
+  	socket.on('clearme', function (data) {
+  		var msg = ip + ':clear:xxx';
+  		log(msg);
+		sendToAllOfs(msg);
+  	});
+
+  	socket.on('disconnect', function () {
+
+  		//remove the socket from local storage
+  		http_clients.splice(http_clients.indexOf(ip), 1);
+
+		//tell projections that socket is gone
+		var msg = ip + ':gone:web';
+		sendToAllOfs(msg);
+		log("gone web client: " + ip);
+
+		io_control.emit('client-gone', {"id":ip});
+
+		//update list of sockets on control page
+	    updateClientList();
+		
+	});
+
+	//update list of sockets on control page
+  	updateClientList();
+
+});
+
+
 function getId(socket) {
 	//return String("web-"+String(socket.request.connection.remoteAddress).hashCode());
 	return String(socket.id);
@@ -195,6 +270,7 @@ function newColor(ip, color) {
 		var hex1 = rgbToHex(res[0].r,res[0].g,res[0].b);
 		var hex2 = rgbToHex(res[1].r,res[1].g,res[1].b);
 		io_base.to(ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
+		io_simulate.to(ip).emit('setColor', {"hex1":hex1, "hex2":hex2});
 		io_control.emit('colorChanged', {id: ip, color: hex1});
 
 	}
@@ -250,6 +326,7 @@ function updateClientList() {
     if(tcp_clients_drawers_know != tcp_clients_num) {
 
     	io_base.emit('projections', {"num":tcp_clients_num});
+    	io_simulate.emit('projections', {"num":tcp_clients_num});
     	tcp_clients_drawers_know = tcp_clients_num;
     }
     
