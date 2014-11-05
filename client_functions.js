@@ -149,6 +149,9 @@ window.onload = function() {
     _addEventListener(document.getElementById('drawtext'),"mouseup",drawText);
     
     line = document.getElementById("line");
+
+    center_point.x = $("#main").offset().left+$("#main").width()/2.;
+    center_point.y = $("#main").offset().top+$("#main").height()/2.;
     
     sendNewColorAfterPageLoad();
 }
@@ -159,6 +162,7 @@ var random_word;
 var random_word_length = 0;
 var random_word_step = 0;
 var last_random_word_point = {x:0, y:0};
+var center_point = {x:0, y:0};
 
 function drawText() {
 
@@ -226,11 +230,23 @@ function sendRandomWordPoint() {
             var time = Math.random()*200+200;
             sendPos(send.x,send.y); 
             last_random_word_point = p;   
+
+            //draw line
+            if(connect(
+                center_point.x-send.x/2.,center_point.y-send.y/2.,
+                center_point.x+send.x/2.,center_point.y+send.y/2.,
+                linecolor,3,line)) {
+               line.style.opacity = 1;
+               fade('line');
+            }
         }
         
         random_word_step++;
 
         random_move_interval = window.setTimeout(function () {sendRandomWordPoint()}, time);
+    }
+    else {
+        last_random_word_point = {x:0, y:0};
     }
 }
 
