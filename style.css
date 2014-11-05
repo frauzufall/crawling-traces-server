@@ -39,6 +39,14 @@ a {
 	background-color: #c1c1c2;
 }
 
+#drawtext {
+	background: url(img/drawtext.png) no-repeat center center;
+}
+
+#drawtext:hover, #drawtext:active {
+	background-color: #c1c1c2;
+}
+
 #header {
 	text-align:right;
 	margin:10px;
@@ -90,6 +98,7 @@ a {
 	height: 100%;
 	z-index: 200;
 	display: none;
+	overflow: auto;
 }
 
 .msg {
@@ -139,4 +148,19 @@ a {
 	bottom: 0;
 	background: black;
 	height: 80px;
+}
+
+#wall-text {
+	width: 100%;
+	padding: 5px;
+}
+
+#wall-text-submit, #wall-text-cancel {
+	padding: 10px 15px;
+	font-size: bold;
+	margin: 10px 0 0 10px;
+}
+
+#wall-text-btns {
+	text-align: right;
 }

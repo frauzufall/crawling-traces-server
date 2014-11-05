@@ -144,12 +144,105 @@ window.onload = function() {
     
     _addEventListener(document.getElementById('newcolor'),"touchstart",sendNewColor);
     _addEventListener(document.getElementById('newcolor'),"mouseup",sendNewColor);
+
+    _addEventListener(document.getElementById('drawtext'),"touchstart",drawText);
+    _addEventListener(document.getElementById('drawtext'),"mouseup",drawText);
     
     line = document.getElementById("line");
     
     sendNewColorAfterPageLoad();
 }
 
+var random_move_interval;
+var random_moves_running = false;
+var random_word;
+var random_word_length = 0;
+var random_word_step = 0;
+var last_random_word_point = {x:0, y:0};
+
+function drawText() {
+
+    opentype.load('fonts/Roboto-Black.ttf', function (err, font) {
+        if (err) {
+            $(".msg").html("Dein Gerät scheint diese Funktion nicht zu unterstützen.");
+            $(".msg").removeClass("success");
+            $(".msg").addClass("error");
+            $(".dimmer-msg").show();
+            setTimeout(function() {
+                $(".dimmer-msg").fadeOut(500, function() {
+                    $(".msg").removeClass("error");
+                });
+            }, 3000);
+        } else {
+
+            $(".msg").html("Gib den Text ein, der auf die Wand gezeichnet werden soll (max. 13 Zeichen):<br /><input type='text' id='wall-text' maxlength='13'/><div id='wall-text-btns'><input type='button' id='wall-text-cancel' value='Abbrechen'><input type='submit' value='OK' id='wall-text-submit'></div>");
+            $(".msg").removeClass("success");
+            $(".msg").removeClass("error");
+            $(".dimmer-msg").addClass("scrollable");
+            $(".dimmer-msg").show();
+            $("#wall-text").focus();
+            $("#wall-text-cancel").on("click touchstart", function() {
+                $(".msg").text("");
+                $(".dimmer-msg").hide();
+                $(".dimmer-msg").removeClass("scrollable");
+            });
+            $("#wall-text-submit").on("click touchstart", function() {
+
+                var text = $("#wall-text").val();
+                
+                $(".msg").text("Dein Text '" + text + "' wird gezeichnet.");
+                $(".msg").addClass("success");
+                setTimeout(function() {
+                    $(".dimmer-msg").fadeOut(500, function() {
+                        $(".msg").removeClass("success");
+                        $(".dimmer-msg").removeClass("scrollable");
+                    });
+                }, 3000);
+                
+                var path = font.getPath(text, 0, 0, 820);
+                random_word = path.commands;
+                random_word_length = random_word.length;
+                random_word_step = 0;
+
+                //stop running text drawings
+                window.clearInterval(random_move_interval);
+                //start new text drawing
+                sendRandomWordPoint();
+    
+            });
+        }
+    });
+
+}
+
+function sendRandomWordPoint() {
+    if(random_word_step < random_word_length) {
+        var t = random_word[random_word_step].type;
+        if(t != "Z") {
+            var p = convertPathPoint(random_word[random_word_step]);
+            var send = {};
+            send.x = p.x - last_random_word_point.x;
+            send.y = p.y - last_random_word_point.y;
+            var time = Math.random()*200+200;
+            sendPos(send.x,send.y); 
+            last_random_word_point = p;   
+        }
+        
+        random_word_step++;
+
+        random_move_interval = window.setTimeout(function () {sendRandomWordPoint()}, time);
+    }
+}
+
+function convertPathPoint(pathpoint) {
+    var last = {};
+    switch(pathpoint.type) {
+        default:
+        last.x = pathpoint.x+Math.random() *22-11;
+        last.y = pathpoint.y+Math.random() *22-11;
+        return last;
+    }
+}
 
 var dist = 40;
 var away = false;
@@ -183,41 +276,44 @@ function endmouse(ev) {
 }
 
 function starttouch(ev) {
-	ev.preventDefault(); 
-    moving = true;
+    if($(".dimmer.scrollable").length == 0 || $(".dimmer").is(":hidden") ) {
+        ev.preventDefault(); 
+        moving = true;
 
-    var pos = getCoords(ev);
+        var pos = getCoords(ev);
 
-    start_x = pos.x;
-    start_y = pos.y;
-    
-    line.style.background = 0;
-    if(getTransformProperty(line)) {
-        line.style.opacity = 1;
+        start_x = pos.x;
+        start_y = pos.y;
+        
+        line.style.background = 0;
+        if(getTransformProperty(line)) {
+            line.style.opacity = 1;
+        }
     }
-
 }
 
 function movetouch(ev) {
-	ev.preventDefault();
-	var pos = getCoords(ev);
-    if(connect(start_x,start_y,pos.x,pos.y,linecolor,3,line)) {
-        line.style.opacity = 1;
+    if($(".dimmer.scrollable").length == 0 || $(".dimmer").is(":hidden") ) {
+    	ev.preventDefault();
+    	var pos = getCoords(ev);
+        if(connect(start_x,start_y,pos.x,pos.y,linecolor,3,line)) {
+            line.style.opacity = 1;
+        }
     }
 }
 
 function endtouch(ev) {
-	ev.preventDefault(); 
-    moving = false;
+    if($(".dimmer.scrollable").length == 0 || $(".dimmer").is(":hidden") ) {
+    	ev.preventDefault(); 
+        moving = false;
 
-    var pos = getCoords(ev);
-    if(connect(start_x,start_y,pos.x,pos.y,linecolor,3,line)) {
-        fade('line');
-    }
+        var pos = getCoords(ev);
+        if(connect(start_x,start_y,pos.x,pos.y,linecolor,3,line)) {
+            fade('line');
+        }
 
-    sendPos(pos.x-start_x,pos.y-start_y);
-    
-    
+        sendPos(pos.x-start_x,pos.y-start_y);
+    }   
 
 }
 
@@ -317,15 +413,6 @@ function connect(x1,y1,x2,y2, color, thickness,line) { // draw a line connecting
     else {
         return false;
     }
-
-    // var rotatestr = "rotate(" + angle + "deg)";
-    // $(line).css({
-    //     "-moz-transform": rotatestr,  /* FF3.5/3.6 */
-    //     "-o-transform": rotatestr,  /* Opera 10.5 */
-    //     "-webkit-transform": rotatestr,  /* Saf3.1+ */
-    //     "transform": rotatestr,  /* Newer browsers (incl IE9) */
-    //     "-sand-transform": rotatestr //fix for IE
-    // });
 }
 
 function getTransformProperty(element) {
@@ -354,28 +441,7 @@ function fade(eid)
   var element = document.getElementById(eid);
   if(element == null)
     return;
-   
-  //if(element.FadeState == null)
-  //{
-    //if(element.style.opacity == null
-        //|| element.style.opacity == ''
-        //|| element.style.opacity == '1')
-    //{
-      //element.FadeState = 2;
-    //}
-    //else
-    //{
-      //element.FadeState = -2;
-    //}
-  //}
-   
-  //if(element.FadeState == 1 || element.FadeState == -1)
-  //{
-    //element.FadeState = element.FadeState == 1 ? -1 : 1;
-    //element.FadeTimeLeft = TimeToFade - element.FadeTimeLeft;
-  //}
-  //else
-  //{
+
     element.FadeState = -1;//element.FadeState == 2 ? -1 : 1;
     element.FadeTimeLeft = TimeToFade;
     setTimeout("animateFade(" + new Date().getTime() + ",'" + eid + "')", 33);
